@@ -1,0 +1,197 @@
+{
+    "name": "Gamma Pi History Bot (AI Powered)",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "triggerAtHour": 9
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "Daily Schedule",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Seed List of Topics\nconst topics = [\n  { category: \"Pillar\", topic: \"Simón Bolívar\", query: \"Simón_Bolívar\" },\n  { category: \"Pillar\", topic: \"José de San Martín\", query: \"José_de_San_Martín\" },\n  { category: \"Pillar\", topic: \"Bernardo O'Higgins\", query: \"Bernardo_O'Higgins\" },\n  { category: \"Pillar\", topic: \"José Martí\", query: \"José_Martí\" },\n  { category: \"Pillar\", topic: \"Benito Juárez\", query: \"Benito_Juárez\" },\n  { category: \"History\", topic: \"Phi Iota Alpha\", query: \"Phi_Iota_Alpha\" },\n  { category: \"History\", topic: \"Union Hispano Americana (1898)\", query: \"Phi_Iota_Alpha\" },\n  { category: \"Concept\", topic: \"Pan-Americanism\", query: \"Pan-Americanism\" },\n  { category: \"General\", topic: \"Latin American Wars of Independence\", query: \"Latin_American_wars_of_independence\" },\n  { category: \"General\", topic: \"Gran Colombia\", query: \"Gran_Colombia\" },\n  { category: \"General\", topic: \"Grito de Dolores\", query: \"Grito_de_Dolores\" }\n];\n\n// Pick a random topic\nconst randomTopic = topics[Math.floor(Math.random() * topics.length)];\n\nreturn {\n  topic: randomTopic.topic,\n  query: randomTopic.query,\n  category: randomTopic.category,\n  url: `https://en.wikipedia.org/wiki/${randomTopic.query}`\n};"
+            },
+            "id": "pick-random-topic",
+            "name": "Pick Random Topic",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.url }}",
+                "options": {
+                    "headers": {
+                        "User-Agent": "GammaPiBot/1.0 (nexus@localhost)"
+                    }
+                }
+            },
+            "id": "get-wikipedia-html",
+            "name": "Get Full Page HTML",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                900,
+                180
+            ]
+        },
+        {
+            "parameters": {
+                "dataPropertyName": "data",
+                "extractionValues": {
+                    "values": [
+                        {
+                            "key": "article_text",
+                            "cssSelector": "#bodyContent p",
+                            "returnArray": true
+                        },
+                        {
+                            "key": "main_image",
+                            "cssSelector": "meta[property='og:image']",
+                            "returnAttribute": "content"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "extract-html",
+            "name": "Extract Text & Image",
+            "type": "n8n-nodes-base.htmlExtract",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                180
+            ]
+        },
+        {
+            "parameters": {
+                "modelId": "models/gemini-1.5-flash",
+                "messages": {
+                    "values": [
+                        {
+                            "content": "=You are the Historian for Gamma Pi (Phi Iota Alpha).\nI will provide a Wikipedia article content about **{{ $('Pick Random Topic').item.json.topic }}**.\n\nFind ONE specific, interesting, or lesser-known detail from this text that relates to leadership, Latin American history, or our values.\nDo NOT just summarize the intro. Find a 'Did You Know?' nugget.\nWrite a short, engaging blurb (2 paragraphs max) for Discord. Start with a Hook.\nEnd with a '🧠 Relevance: [Why this matters]' line.\n\nArticle Text (Truncated):\n{{ $json.article_text.join(' ').slice(0, 30000) }}"
+                        }
+                    ]
+                }
+            },
+            "id": "google-gemini",
+            "name": "Google Gemini Chat",
+            "type": "n8n-nodes-base.googleGeminiChat",
+            "typeVersion": 1,
+            "position": [
+                1340,
+                300
+            ],
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "YOUR_GEMINI_CREDENTIAL_ID",
+                    "name": "Google Gemini Account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "content": "={{ $json.output }}",
+                "options": {
+                    "embeds": [
+                        {
+                            "title": "=Did You Know? - {{ $('Pick Random Topic').item.json.topic }}",
+                            "description": "={{ $json.content }}",
+                            "url": "={{ $('Pick Random Topic').item.json.url }}",
+                            "image": {
+                                "url": "={{ $('Extract Text & Image').item.json.main_image }}"
+                            },
+                            "footer": {
+                                "text": "Gamma Pi - AI Historian"
+                            },
+                            "color": "#B41528"
+                        }
+                    ]
+                },
+                "webhookUri": "YOUR_DISCORD_WEBHOOK_URL_HERE"
+            },
+            "id": "post-to-discord",
+            "name": "Post to Discord",
+            "type": "n8n-nodes-base.discord",
+            "typeVersion": 2,
+            "position": [
+                1560,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Daily Schedule": {
+            "main": [
+                [
+                    {
+                        "node": "Pick Random Topic",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Pick Random Topic": {
+            "main": [
+                [
+                    {
+                        "node": "Get Full Page HTML",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Full Page HTML": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Text & Image",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Text & Image": {
+            "main": [
+                [
+                    {
+                        "node": "Google Gemini Chat",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Gemini Chat": {
+            "main": [
+                [
+                    {
+                        "node": "Post to Discord",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
