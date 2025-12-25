@@ -37,7 +37,11 @@
         {
             "parameters": {
                 "url": "={{ 'https://en.wikipedia.org/api/rest_v1/page/summary/' + $json.query }}",
-                "options": {}
+                "options": {
+                    "headers": {
+                        "User-Agent": "GammaPiBot/1.0 (nexus@localhost)"
+                    }
+                }
             },
             "id": "3be92158-9411-4f16-bb66-65481231267f",
             "name": "Get Info from Wikipedia",
