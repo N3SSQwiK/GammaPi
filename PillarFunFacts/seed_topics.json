@@ -1,0 +1,57 @@
+[
+    {
+        "category": "Pillar",
+        "topic": "Simón Bolívar",
+        "query": "Simón_Bolívar"
+    },
+    {
+        "category": "Pillar",
+        "topic": "José de San Martín",
+        "query": "José_de_San_Martín"
+    },
+    {
+        "category": "Pillar",
+        "topic": "Bernardo O'Higgins",
+        "query": "Bernardo_O'Higgins"
+    },
+    {
+        "category": "Pillar",
+        "topic": "José Martí",
+        "query": "José_Martí"
+    },
+    {
+        "category": "Pillar",
+        "topic": "Benito Juárez",
+        "query": "Benito_Juárez"
+    },
+    {
+        "category": "History",
+        "topic": "Founding of Phi Iota Alpha",
+        "query": "Phi_Iota_Alpha"
+    },
+    {
+        "category": "History",
+        "topic": "Union Hispano Americana (1898)",
+        "query": "Phi_Iota_Alpha"
+    },
+    {
+        "category": "Concept",
+        "topic": "Pan-Americanism",
+        "query": "Pan-Americanism"
+    },
+    {
+        "category": "General",
+        "topic": "Latin American Wars of Independence",
+        "query": "Latin_American_wars_of_independence"
+    },
+    {
+        "category": "General",
+        "topic": "Gran Colombia",
+        "query": "Gran_Colombia"
+    },
+    {
+        "category": "General",
+        "topic": "Grito de Dolores",
+        "query": "Grito_de_Dolores"
+    }
+]

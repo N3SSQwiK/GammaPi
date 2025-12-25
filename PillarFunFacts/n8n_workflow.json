@@ -1,0 +1,117 @@
+{
+    "name": "Gamma Pi History Bot",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "triggerAtHour": 9
+                        }
+                    ]
+                }
+            },
+            "id": "1f2b1d7d-53e7-4b72-9654-20a89467268d",
+            "name": "Daily Schedule",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Seed List of Topics\nconst topics = [\n  { category: \"Pillar\", topic: \"Simón Bolívar\", query: \"Simón_Bolívar\" },\n  { category: \"Pillar\", topic: \"José de San Martín\", query: \"José_de_San_Martín\" },\n  { category: \"Pillar\", topic: \"Bernardo O'Higgins\", query: \"Bernardo_O'Higgins\" },\n  { category: \"Pillar\", topic: \"José Martí\", query: \"José_Martí\" },\n  { category: \"Pillar\", topic: \"Benito Juárez\", query: \"Benito_Juárez\" },\n  { category: \"History\", topic: \"Phi Iota Alpha\", query: \"Phi_Iota_Alpha\" },\n  { category: \"History\", topic: \"Union Hispano Americana (1898)\", query: \"Phi_Iota_Alpha\" },\n  { category: \"Concept\", topic: \"Pan-Americanism\", query: \"Pan-Americanism\" },\n  { category: \"General\", topic: \"Latin American Wars of Independence\", query: \"Latin_American_wars_of_independence\" },\n  { category: \"General\", topic: \"Gran Colombia\", query: \"Gran_Colombia\" },\n  { category: \"General\", topic: \"Grito de Dolores\", query: \"Grito_de_Dolores\" }\n];\n\n// Pick a random topic\nconst randomTopic = topics[Math.floor(Math.random() * topics.length)];\n\nreturn {\n  topic: randomTopic.topic,\n  query: randomTopic.query,\n  category: randomTopic.category\n};"
+            },
+            "id": "2df03434-6380-4abc-99be-7890535928d1",
+            "name": "Pick Random Topic",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ 'https://en.wikipedia.org/api/rest_v1/page/summary/' + $json.query }}",
+                "options": {}
+            },
+            "id": "3be92158-9411-4f16-bb66-65481231267f",
+            "name": "Get Info from Wikipedia",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "content": "=**Did You Know?** 🏛️\n\n**{{ $json.title }}**\n\n{{ $json.extract }}\n\n[Read more on Wikipedia]({{ $json.content_urls.desktop.page }})",
+                "options": {
+                    "embeds": [
+                        {
+                            "title": "={{ $json.title }}",
+                            "description": "={{ $json.extract }}",
+                            "url": "={{ $json.content_urls.desktop.page }}",
+                            "image": {
+                                "url": "={{ $json.originalimage.source }}"
+                            },
+                            "footer": {
+                                "text": "Gamma Pi - Daily History"
+                            },
+                            "color": "#B41528"
+                        }
+                    ]
+                },
+                "webhookUri": "YOUR_DISCORD_WEBHOOK_URL_HERE"
+            },
+            "id": "4c941234-7582-4122-8692-567890123456",
+            "name": "Post to Discord",
+            "type": "n8n-nodes-base.discord",
+            "typeVersion": 2,
+            "position": [
+                1120,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Daily Schedule": {
+            "main": [
+                [
+                    {
+                        "node": "Pick Random Topic",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Pick Random Topic": {
+            "main": [
+                [
+                    {
+                        "node": "Get Info from Wikipedia",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Info from Wikipedia": {
+            "main": [
+                [
+                    {
+                        "node": "Post to Discord",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
