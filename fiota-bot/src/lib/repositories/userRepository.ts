@@ -41,6 +41,15 @@ export const userRepository = {
     },
 
     findBrothersByIndustry(industry: string): UserRow[] {
-        return db.prepare('SELECT * FROM users WHERE status = "BROTHER" AND industry LIKE ?').all(`%${industry}%`) as UserRow[];
+        const conditions: string[] = ['status = ?'];
+        const params: any[] = ['BROTHER'];
+
+        if (industry) {
+            conditions.push('industry LIKE ?');
+            params.push(`%${industry}%`);
+        }
+
+        const sql = `SELECT * FROM users WHERE ${conditions.join(' AND ')}`;
+        return db.prepare(sql).all(...params) as UserRow[];
     }
 };
