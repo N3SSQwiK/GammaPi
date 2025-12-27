@@ -42,6 +42,16 @@ const initDb = () => {
             status TEXT DEFAULT 'PENDING'
         )
     `);
+
+    // Votes Table
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS votes (
+            poll_id TEXT,
+            user_id TEXT,
+            choice TEXT,
+            PRIMARY KEY (poll_id, user_id)
+        )
+    `);
     
     console.log('Database initialized');
 };

@@ -27,6 +27,11 @@ client.commands = new Collection();
 // Initialize DB
 initDb();
 
+if (!config.DISCORD_TOKEN) {
+    logger.error('CRITICAL: DISCORD_TOKEN is not set in .env. Bot cannot start.');
+    process.exit(1);
+}
+
 const loadEvents = async () => {
     const eventsPath = path.join(__dirname, 'events');
     if (fs.existsSync(eventsPath)) {

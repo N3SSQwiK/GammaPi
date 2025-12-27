@@ -19,7 +19,11 @@ export const userRepository = {
     },
 
     upsert(user: Partial<UserRow>): void {
-        const columns = Object.keys(user);
+        const VALID_COLUMNS = ['discord_id', 'real_name', 'status', 'linked_in_id', 'vouched_by', 'zip_code', 'location_meta', 'industry', 'job_title', 'is_mentor'];
+        const columns = Object.keys(user).filter(col => VALID_COLUMNS.includes(col));
+        
+        if (columns.length === 0) return;
+
         const placeholders = columns.map(() => '?').join(', ');
         const updates = columns.map(col => `${col} = EXCLUDED.${col}`).join(', ');
         
@@ -29,7 +33,8 @@ export const userRepository = {
             ON CONFLICT(discord_id) DO UPDATE SET ${updates}
         `;
         
-        db.prepare(sql).run(...Object.values(user));
+        const values = columns.map(col => (user as any)[col]);
+        db.prepare(sql).run(...values);
     },
 
     updateStatus(discordId: string, status: 'GUEST' | 'BROTHER' | 'OFFICER'): void {

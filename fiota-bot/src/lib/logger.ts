@@ -1,7 +1,12 @@
 import winston from 'winston';
 import path from 'path';
+import fs from 'fs';
 
 const logDir = 'logs';
+
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
 
 const logger = winston.createLogger({
     level: 'info',

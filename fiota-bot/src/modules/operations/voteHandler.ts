@@ -1,4 +1,5 @@
 import { ChatInputCommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { voteRepository } from '../../lib/repositories/voteRepository';
 
 export async function handleVote(interaction: ChatInputCommandInteraction) {
     const topic = interaction.options.getString('topic', true);
@@ -15,20 +16,13 @@ export async function handleVote(interaction: ChatInputCommandInteraction) {
     );
 
     const message = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
-
-    const votes = new Map<string, string>(); // userId -> choice
+    const pollId = message.id;
 
     const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: 24 * 60 * 60 * 1000 }); // 24 hours
 
     collector.on('collect', async i => {
-        votes.set(i.user.id, i.customId);
-
-        const counts = { yes: 0, no: 0, abstain: 0 };
-        votes.forEach(choice => {
-            if (choice === 'vote_yes') counts.yes++;
-            if (choice === 'vote_no') counts.no++;
-            if (choice === 'vote_abstain') counts.abstain++;
-        });
+        voteRepository.saveVote(pollId, i.user.id, i.customId);
+        const counts = voteRepository.getCounts(pollId);
 
         const newDescription = `Cast your vote using the buttons below.\n\n✅ Yes: ${counts.yes}\n❌ No: ${counts.no}\n🤷 Abstain: ${counts.abstain}`;
         

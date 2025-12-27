@@ -12,7 +12,3 @@ export const config = {
     AUDIT_CRON_SCHEDULE: process.env.AUDIT_CRON_SCHEDULE || '0 9 * * 1', // Default: Monday 9 AM
     VERIFICATION_CHANNEL_ID: process.env.VERIFICATION_CHANNEL_ID || ''
 };
-
-if (!config.DISCORD_TOKEN) {
-    console.warn("WARNING: DISCORD_TOKEN is not set in .env");
-}
