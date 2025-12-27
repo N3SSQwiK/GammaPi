@@ -33,9 +33,15 @@ This project utilizes **OpenSpec** for spec-driven development.
 *   All requirements and scenarios are documented in `openspec/specs/`.
 *   Changes are proposed and tracked in `openspec/changes/`.
 
-### Deployment Quick-Start
-1.  **FiotaBot**: See `FiotaBot_Implementation_SOP.md`.
-2.  **n8n**: Import `.json` files from `PillarFunFacts/` into your n8n instance and configure your Gemini API Key.
+## ⚡ Day 0: Server Provisioning (Quick Setup)
+If you are starting with a blank Discord server, follow these steps to build the infrastructure in seconds:
+
+1.  **Invite the Bot**: Use the [Discord Developer Portal](https://discord.com/developers/applications) to generate an invite link for FiotaBot with `Administrator` and `applications.commands` scopes.
+2.  **Go Online**: SSH into your Hostinger VPS, `cd fiota-bot`, and run `pm2 start dist/index.js`.
+3.  **Run Construction**: In Discord, type `/setup`. The bot will automatically create all Roles, Forum Channels, and Tags defined in the chapter spec.
+4.  **Audit**: Run `/audit` to verify that all security permissions are correctly implemented.
+
+Detailed instructions are available in the **[Implementation SOP](FiotaBot_Implementation_SOP.md)**.
 
 ---
-**Gamma Pi Chapter** | *SPJP*
+**Gamma Pi Chapter** | *Semper Parati, Semper Juncti.*
