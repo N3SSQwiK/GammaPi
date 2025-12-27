@@ -22,7 +22,13 @@ When a developer pushes changes to GitHub:
 3.  **Pull Code:** `git pull`
 4.  **Rebuild:** `npm install && npm run build`
 5.  **Restart:** `pm2 restart FiotaBot`
-6.  **Verify:** `pm2 logs FiotaBot` (Watch for "Ready! Logged in as..." message).
+### 6. Verify: `pm2 logs FiotaBot` (Watch for "Ready! Logged in as..." message).
+
+### 🛡️ Server Auditing
+Run the `/audit` command monthly to ensure:
+1.  **Security:** No dangerous permissions leaked to `@everyone`.
+2.  **Structure:** All required Forums (e.g., `#lions-den`) and Tags exist.
+3.  **Roles:** Essential roles like `Line Committee` haven't been deleted.
 
 ### 🚑 The "Bot is Dead" Checklist
 If the bot isn't responding:

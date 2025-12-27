@@ -37,6 +37,13 @@ Willing to chat with younger brothers or candidates? Toggle your status.
 *   **Result:** You get the `🧠 Open to Mentor` badge on your profile.
 *   **Command:** `/mentor status:Off` (When you get too busy).
 
+### 🦁 The Lions' Den (Personal Blogs)
+Instead of 50 separate channels, we have **one** Forum called `#lions-den`.
+1.  **Create Your Space:** Post a new thread titled *"Nexus's Blog"* or *"John's Gym Log"*.
+2.  **Tag It:** Use tags like `🏋️ Fitness` or `🎮 Gaming` so others can find you.
+3.  **Post Updates:** Treat this thread like your personal social feed.
+4.  **Follow:** Click the "Follow" (Bell) icon on brothers' threads you want to see updates from.
+
 ---
 
 ## 🏛️ Phase 3: Chapter Operations

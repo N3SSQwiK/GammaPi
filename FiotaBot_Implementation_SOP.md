@@ -155,10 +155,14 @@
 4.  **Brothers:** Click the button. Bot replies "Checked In!".
 5.  **Secretary:** After 15 mins, bot posts "Attendance Closed" (and saves list to database).
 
-### 4.3 How to Search the Rolodex
-1.  **Brother:** Wants to find someone in Finance.
-2.  **Command:** `/find industry:Finance`.
-3.  **Bot:** "Found: @Nexus (NYC), @John (Chicago)."
+### 4.4 How to Run a Security Audit
+1.  **Tech Chair:** Wants to ensure no permissions are broken.
+2.  **Command:** `/audit`.
+3.  **Bot:** Scans all roles and channels.
+4.  **Result:** Returns a report.
+    *   ✅ "All Systems Nominal" = Good.
+    *   🔴 "CRITICAL: @everyone has Admin" = Fix immediately.
+    *   ⚠️ "Missing Tag" = Go add the tag to the Forum.
 
 ---
 

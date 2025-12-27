@@ -139,6 +139,8 @@ The custom bot (e.g., **"FiotaBot"**) will be self-hosted on **Hostinger** along
 
 *   **Oversight:** Ensure the Chapter Advisor has full Admin access to monitor all channels.
 
+*   **Server Compliance (Audit):** To prevent configuration drift (e.g., accidental exposure of private channels), the bot includes an `/audit` command. This programmatically checks Role Permissions against the spec and alerts Admins to any security risks (e.g., if `@everyone` accidentally gets Admin rights).
+
 
 
 ## 7. Implementation Roadmap
