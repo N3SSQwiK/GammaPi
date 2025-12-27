@@ -9,7 +9,7 @@ We are moving chapter operations to Discord to foster professional engagement, s
 
 ### 🦁 FiotaBot (Chapter Management)
 Located in `fiota-bot/`, this custom Discord bot (Node.js/TypeScript) handles the chapter's core "Identity and Operations."
-*   **Dual-Voucher Verification**: Secure onboarding requiring 2 active brothers to approve new members.
+*   **Dual-Voucher Verification**: Secure onboarding requiring 2 ΓΠ brothers to approve new members.
 *   **Professional Rolodex**: Searchable database of brothers by Industry and Job Title (`/find`).
 *   **Pipeline Tracking**: Status management for Candidates and Interests (`/pipeline`).
 *   **Chapter Ops**: Integrated commands for `/attendance`, `/vote`, and `/mentor` toggles.
@@ -37,4 +37,4 @@ This project utilizes **OpenSpec** for spec-driven development.
 2.  **n8n**: Import `.json` files from `PillarFunFacts/` into your n8n instance and configure your Gemini API Key.
 
 ---
-**Gamma Pi Chapter** | *Semper Semper*
+**Gamma Pi Chapter** | *SPJP*

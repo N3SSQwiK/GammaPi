@@ -11,7 +11,7 @@ The bot MUST support a "Visiting Brother" role for verifying active members from
 
 #### Scenario: Visitor Verification
 - **WHEN** a user is verified via the "Dual-Voucher" system but marked as "Other Chapter"
-- **THEN** they receive the "Visiting Brother" role (Networking access) but NOT the "Gamma Pi Brother" role (Voting access).
+- **THEN** they receive the "Visiting Brother" role (Networking access) but NOT the "ΓΠ Brother" role (Voting access).
 
 ### Requirement: Geographic Profile
 The bot MUST capture the user's Zip Code and automatically derive their location metadata.

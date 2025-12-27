@@ -11,7 +11,7 @@ To effectively manage different audiences (Public, Other Chapters, Internal), th
 
 ### 2.1 Role Hierarchy (suggested)
 *   **🦁 E-Board (Admin):** Full control, manages bots/webhooks.
-*   **🦁 Gamma Pi Brother (Active):** Dues-paying members of Gamma Pi with full voting rights and internal business access.
+*   **🦁 ΓΠ Brother:** Dues-paying members of Gamma Pi with full voting rights and internal business access.
 *   **🦁 Visiting Brother (Active):** Verified active members from other chapters. Access to professional networking, but restricted from Gamma Pi chapter-specific business/voting.
 *   **🦁 Brother at Large (Alumni):** Verified Phi Iota Alpha alumni or inactive brothers. Professional networking access.
 *   **🦁 Line Committee:** Officers/Brothers responsible for the current intake. Elevated visibility into candidate data and debrief channels.
@@ -25,7 +25,7 @@ We recommend utilizing Discord's "Categories" to group permissions.
 | :--- | :--- | :--- | :--- |
 | **📣 PUBLIC INFO** | Everyone | `#announcements`, `#events`, `#linkedin-feed`, `#about-us` | **Read:** Everyone<br>**Write:** E-Board only |
 | **🤝 PROFESSIONAL NETWORKING** | All Brothers | `#industry-chat`, `#job-board`, `#resume-review`, `#mentorship` | **Read/Write:** All Brothers (Gamma Pi + Visiting)<br>**Deny:** Guests/Candidates |
-| **🦁 CHAPTER OPS** | Gamma Pi Bros | `#general-chat`, `#meeting-minutes`, `#treasury`, `#service-projects` | **Read/Write:** Active Gamma Pi Brothers only |
+| **🦁 CHAPTER OPS** | ΓΠ Brothers | `#general-chat`, `#meeting-minutes`, `#treasury`, `#service-projects` | **Read/Write:** ΓΠ Brothers only |
 | **🗳️ E-BOARD** | Officers | `#officer-chat`, `#sensitive-matters`, `#intake-planning` | **Read/Write:** E-Board only |
 | **📚 ONBOARDING** | Candidates + Bros | `#orientation`, `#candidate-resources` | **Read:** Candidates + Bros<br>**Write:** Bros |
 
@@ -59,7 +59,7 @@ Leverage your existing n8n setup (hosted on Hostinger) to reduce manual administ
 *   **The Weekly Digest:** To combat notification fatigue, an automated email is sent every Friday afternoon summarizing the top 3 announcements and upcoming events from Discord. This ensures busy professionals stay informed without needing to log in daily.
 
 ### 4.3 Operational Automation
-*   **Meeting Reminders:** A cron job in n8n triggers every meeting day at 9 AM, tagging `@Gamma Pi Brother` in `#announcements` with the agenda.
+*   **Meeting Reminders:** A cron job in n8n triggers every meeting day at 9 AM, tagging `@ΓΠ Brother` in `#announcements` with the agenda.
 *   **Dues Reminders:** Integration with payment platforms (like Stripe or PayPal webhooks) to privately DM the Treasurer when a payment is received.
 
 ### 4.4 Educational Content (The "Pillar" Workflow)
@@ -95,7 +95,7 @@ The custom bot (e.g., **"FiotaBot"**) will be self-hosted on **Hostinger** along
 
 *   **Process:** The user fills out the "Brother Application" (Name, Chapter, Voucher).
 
-*   **Security:** To prevent "buddy system" bias or accidents, the bot now requires **two (2) separate Active Brothers** to click **[✅ Verify]** on the ticket.
+*   **Security:** To prevent "buddy system" bias or accidents, the bot now requires **two (2) separate ΓΠ Brothers** to click **[✅ Verify]** on the ticket.
 
     *   *Vote 1:* "First Motion" (e.g., The Voucher).
 
@@ -149,4 +149,4 @@ The custom bot (e.g., **"FiotaBot"**) will be self-hosted on **Hostinger** along
 
 3.  **Phase 3 (Custom App):** Develop "Chapter Meeting Manager" (MVP: Attendance & Voting) and deploy to Hostinger.
 
-4.  **Phase 4 (Migration):** Onboard active brothers, then alumni, then public/candidates using the **Voucher System**.
+4.  **Phase 4 (Migration):** Onboard ΓΠ brothers, then alumni, then public/candidates using the **Voucher System**.

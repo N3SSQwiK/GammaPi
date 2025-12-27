@@ -7,7 +7,7 @@ The bot MUST present a persistent "Welcome" message in the designated entry chan
 - **THEN** they see the Welcome Gate with "Brother Verification" and "Guest Access" buttons.
 
 ### Requirement: Dual-Voucher Verification
-To gain "Brother" status, an applicant MUST be approved by two distinct Active Brothers.
+To gain "Brother" status, an applicant MUST be approved by two distinct ΓΠ Brothers.
 
 #### Scenario: First Vouch
 - **WHEN** the first Brother clicks "Approve" on a ticket

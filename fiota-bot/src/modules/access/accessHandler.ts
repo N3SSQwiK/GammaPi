@@ -21,7 +21,7 @@ export async function handleAccessButton(interaction: Interaction) {
 
         const voucherInput = new TextInputBuilder()
             .setCustomId('voucher_name')
-            .setLabel("Voucher Name (Active Brother)")
+            .setLabel("Voucher Name (ΓΠ Brother)")
             .setStyle(TextInputStyle.Short);
 
         const zipInput = new TextInputBuilder()
