@@ -75,6 +75,27 @@
 
 ---
 
+## 🦁 Forum E: The Lions' Den (Personal Blogs)
+**Purpose:** A dedicated space for each Brother to have their own "feed" or "blog."
+
+**Why use a Forum?**
+Instead of creating 50+ separate text channels (which clutters the sidebar and creates ghost towns), we use **one** Forum. Each Brother creates **one Thread** that serves as their personal space. Other brothers can "Follow" specific threads they care about without being overwhelmed.
+
+### Tags
+*   `👋 My Life`: General updates, family, and daily musings.
+*   `🏋️ Fitness`: Tracking gym progress or marathon training.
+*   `👨‍💻 Projects`: Showcasing side hustles, code, or DIY builds.
+*   `🎮 Gaming`: Stream updates or LFG (Looking For Group).
+*   `🍳 Food`: Cooking and restaurant adventures.
+
+### Real World Examples
+*   **Post Title:** "Nexus's Tech & Travel Journal"
+    *   *Content:* "Just landed in Tokyo! Here are some photos..."
+*   **Post Title:** "John's Road to the NYC Marathon"
+    *   *Content:* "Week 4 training logs. 15 miles today."
+
+---
+
 ## ⚙️ Setup Guide for Tech Chair
 
 1.  **Enable Communities:** Ensure your server is set to a "Community Server" in Discord settings to unlock Forums.
