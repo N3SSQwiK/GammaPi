@@ -1,9 +1,9 @@
 # FiotaBot Technical Specification
 
-**Version:** 1.0
+**Version:** 1.1
 **Target Platform:** Discord (Bot), Hostinger (VPS)
-**Language:** Node.js (TypeScript recommended) or Python
-**Database:** SQLite (local on Hostinger) or JSON (for MVP)
+**Language:** Node.js (TypeScript)
+**Database:** SQLite (local on Hostinger via `better-sqlite3`)
 
 ## 1. System Overview
 FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its primary function is **Identity Management** (Verification) and **Chapter Operations** (Voting, Attendance). It acts as the bridge between Discord, the Public (LinkedIn), and Internal Brotherhood.
@@ -19,26 +19,23 @@ FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its
     *   Fields: `Full Name`, `Chapter of Initiation`, `Induction Year`, `Voucher Name`, `Zip Code`, `Industry`, `Job Title`.
 2.  **Process:**
     *   Bot resolves Zip Code -> City/State/Timezone.
-    *   Bot posts "Verification Ticket" to `#pending-verifications` (Admin Only).
+    *   Bot posts "Verification Ticket" to `#pending-verifications` (Configurable via `VERIFICATION_CHANNEL_ID`).
     *   Embed status: `🔴 Pending (0/2)`.
+    *   **Transactions:** Approval logic uses DB transactions to prevent race conditions.
+    *   **Role Grant:** Upon 2/2 approvals, user is granted the `🦁 ΓΠ Brother` role.
 
 #### Feature B: LinkedIn OAuth (Guests/Interests)
 1.  **Input:** User clicks button.
 2.  **Process:**
     *   Bot generates a unique URL: `https://gammapi.hostinger-url.com/auth/linkedin?user_id=12345`.
     *   User logs in on LinkedIn.
-    *   Server callback receives `access_token` and fetches Profile Data (Name, Headline).
-3.  **Validation:**
-    *   Check: Account age > 30 days (if available) or existing connections > 10.
-4.  **Output:**
-    *   Bot renames user on Discord to `Real Name (Industry)`.
-    *   User gets `Guest` role.
+    *   Server callback receives `access_token` and fetches Profile Data.
+3.  **Output:** Bot renames user on Discord to `Real Name (Industry)` and grants `Guest` role.
 
 #### Feature C: Professional Search (Rolodex)
-*   **Command:** `/find [industry] [city]`
-*   **Action:** Queries the database.
+*   **Command:** `/find [industry]`
+*   **Action:** Queries the database using parameterized SQL.
 *   **Output:** Returns a list of brothers matching criteria.
-    *   Example: "Found 2 Brothers in 'Finance': @Nexus (NYC), @John (Chicago)."
 
 #### Feature D: Mentorship Toggle
 *   **Command:** `/mentor [status: On/Off]`
@@ -47,23 +44,21 @@ FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its
 ### 2.2 Chapter Meeting Module
 *   **Command:** `/attendance [duration_minutes]`
     *   **Action:** Creates a button in current channel `[Check In]`.
-    *   **Logic:** Users click button. Bot records UserID + Timestamp.
-    *   **Output:** At end of timer, generates a `.csv` file of attendees for the Secretary.
-*   **Command:** `/vote [topic] [options]`
-    *   **Action:** Formal poll embed.
-    *   **Logic:** Single vote per user. Anonymous or Public (configurable).
-    *   **Output:** Results graph.
+    *   **Logic:** Users click button. Bot records UserID in the persistent `attendance` table.
+*   **Command:** `/vote [topic]`
+    *   **Action:** Formal poll embed with **Yes/No/Abstain Buttons**.
+    *   **Logic:** Single vote per user. Votes are persisted to the database (survive bot restarts).
 
 ### 2.3 Onboarding Module (Interests)
-*   **Command:** `/progress [module_id]`
-    *   **Action:** Updates user's progress in a local DB.
-    *   **Logic:** If `History_Module` = Complete, unlock `#history-channel`.
+*   **Command:** `/pipeline [user] [status]`
+    *   **Action:** Updates a candidate's position in the intake funnel (Applied, Interview, Decision).
+    *   **Visibility:** Syncs with the "Line Committee" permissions to control opacity.
 
 ### 2.4 Audit & Compliance Module
 *   **Command:** `/audit`
     *   **Action:** Scans server Role/Channel/Permission structure.
     *   **Logic:** Compares `interaction.guild` state against a hardcoded "Golden Config".
-    *   **Output:** Embed Report (Pass/Fail) listing missing roles or dangerous permissions.
+    *   **Output:** Embed Report (Pass/Fail) with description truncation at 4000 characters.
 
 ### 2.5 Scheduler Module (Automation)
 *   **Technology:** `node-cron`
@@ -77,27 +72,46 @@ FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its
 | `discord_id` | String (PK) | Unique Discord ID |
 | `real_name` | String | From Verification or LinkedIn |
 | `status` | Enum | `GUEST`, `BROTHER`, `OFFICER` |
-| `linked_in_id` | String | Unique LinkedIn ID (for anti-duplicate) |
-| `vouched_by` | JSON | `["brother_id_1", "brother_id_2"]` |
 | `zip_code` | String | 5-digit Zip |
-| `location_meta` | JSON | `{ city: "NY", state: "NY", tz: "EST" }` |
 | `industry` | String | e.g. "Tech", "Finance" |
 | `job_title` | String | e.g. "Senior Engineer" |
-| `is_mentor` | Boolean | True/False |
+| `is_mentor` | Integer | 1 (True) or 0 (False) |
 
 ### Table: Attendance
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `meeting_id` | AutoInc | Unique Meeting ID |
 | `date` | Date | Meeting Date |
-| `attendees` | JSON | List of Discord IDs |
+| `topic` | String | Meeting Topic |
+| `attendees` | JSON String | List of Discord IDs |
+
+### Table: Votes (Persistence)
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `poll_id` | String | Discord Message ID of the poll |
+| `user_id` | String | Discord ID of the voter |
+| `choice` | String | `vote_yes`, `vote_no`, `vote_abstain` |
+| **PK** | `(poll_id, user_id)` | Primary Key |
+
+### Table: Verification Tickets
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `ticket_id` | String (PK) | Internal ID |
+| `user_id` | String | Applicant ID |
+| `voucher_1` | String | ID of first brother |
+| `voucher_2` | String | ID of second brother |
+| `status` | String | `PENDING`, `PENDING_2`, `VERIFIED` |
 
 ## 4. Infrastructure & Security
 *   **Hosting:** Hostinger VPS (Ubuntu/Debian).
 *   **Process Manager:** PM2 (to keep bot alive).
-*   **Secrets Management:** `.env` file for Discord Token, LinkedIn Client ID/Secret.
-*   **Backup:** SQLite database file backed up nightly via cron to a separate folder.
+*   **Logging:** Winston structured logging (`logs/combined.log` and `logs/error.log`).
+*   **Startup:** All commands/events loaded asynchronously before Discord login.
+*   **Graceful Shutdown:** Handles `SIGINT` to close DB connections and cleanup.
 
 ## 5. External API Requirements
 1.  **Discord API:** Bot Token, Intents (Guild Members, Message Content).
 2.  **LinkedIn API:** "Sign In with LinkedIn" Product enabled in Developer Portal.
+
+---
+**Semper Parati, Semper Juncti.**

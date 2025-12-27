@@ -22,7 +22,7 @@ When a developer pushes changes to GitHub:
 3.  **Pull Code:** `git pull`
 4.  **Rebuild:** `npm install && npm run build`
 5.  **Restart:** `pm2 restart FiotaBot`
-### 6. Verify: `pm2 logs FiotaBot` (Watch for "Ready! Logged in as..." message).
+6.  **Verify:** `pm2 logs FiotaBot` OR `tail -f logs/combined.log`.
 
 ### 🛡️ Server Auditing
 The audit is now **automated** to run every Monday at 9 AM. 
@@ -41,7 +41,10 @@ If the bot isn't responding:
 ---
 
 ## 3. Database Management (CRITICAL)
-FiotaBot uses **SQLite** (`fiota.db`). This is a *single file*. If this file is deleted, **ALL VERIFICATION DATA IS LOST.**
+FiotaBot uses **SQLite** (`fiota.db`). This file contains:
+*   **Verification History:** Who vouched for whom.
+*   **Attendance:** Member meeting records.
+*   **Active Votes:** Current poll data (Voting now survives restarts).
 
 ### 🛡️ Backup Strategy
 You must automate backups.
@@ -65,7 +68,15 @@ To check the database without the bot:
 
 ---
 
-## 4. n8n Automation (Weekly Digest)
+## 4. Logger & Infrastructure
+*   **Auto-Creation:** The bot automatically creates the `logs/` folder on startup.
+*   **Logs:**
+    *   `logs/error.log`: Look here first for crashes.
+    *   `logs/combined.log`: Full trail of user actions and automated audits.
+
+---
+
+## 5. n8n Automation (Weekly Digest)
 *   **Access:** `http://<server_ip>:5678`
 *   **Credential Expiry:** Microsoft Outlook tokens expire periodically.
     *   **Fix:** Log into n8n > Credentials > Outlook > Re-connect.
@@ -73,7 +84,7 @@ To check the database without the bot:
 
 ---
 
-## 5. Security Protocols
+## 6. Security Protocols
 *   **New Tech Chair Transition:**
     1.  Rotate the **Discord Bot Token** in Developer Portal.
     2.  Rotate **Hostinger SSH Keys/Password**.
@@ -85,3 +96,4 @@ To check the database without the bot:
 
 ---
 **Maintained by Gamma Pi Tech Chair**
+*Semper Parati, Semper Juncti.*

@@ -81,12 +81,16 @@
     *   This opens a text editor inside the terminal.
     *   Paste the following (Right-click usually pastes):
         ```env
-        DISCORD_TOKEN=paste_your_token_from_step_1.1_here
+        DISCORD_TOKEN=paste_your_token_here
         CLIENT_ID=paste_your_client_id_here
-        GUILD_ID=right_click_your_discord_server_icon_and_copy_id
-        AUDIT_CHANNEL_ID=right_click_your_admin_channel_and_copy_id
+        GUILD_ID=your_server_id
+        VERIFICATION_CHANNEL_ID=id_of_private_admin_channel
+        AUDIT_CHANNEL_ID=id_of_officer_notification_channel
         AUDIT_CRON_SCHEDULE="0 9 * * 1"
         ```
+    *   **Variables Explained:**
+        *   `VERIFICATION_CHANNEL_ID`: Where the "Voucher Tickets" go for brothers to approve.
+        *   `AUDIT_CHANNEL_ID`: Where the weekly security report is posted.
     *   **Save:** Press `Ctrl+O`, then `Enter`.
     *   **Exit:** Press `Ctrl+X`.
 
