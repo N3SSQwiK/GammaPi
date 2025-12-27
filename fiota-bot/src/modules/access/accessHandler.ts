@@ -1,5 +1,6 @@
 import { Interaction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, TextChannel } from 'discord.js';
 import db from '../../lib/db';
+import { config } from '../../config';
 
 export async function handleAccessButton(interaction: Interaction) {
     if (!interaction.isButton()) return;
@@ -55,29 +56,51 @@ export async function handleAccessButton(interaction: Interaction) {
     if (interaction.customId.startsWith('approve_ticket_')) {
         const ticketId = interaction.customId.split('_')[2];
         const approver = interaction.user;
+        
+        // Transaction to prevent race condition
+        const processApproval = db.transaction(() => {
+            const currentTicket = db.prepare('SELECT * FROM verification_tickets WHERE ticket_id = ?').get(ticketId) as any;
+            
+            if (!currentTicket) return { success: false, msg: 'Ticket not found.' };
+            if (currentTicket.status === 'VERIFIED') return { success: false, msg: 'User already verified.' };
+            
+            if (currentTicket.voucher_1 === approver.id || currentTicket.voucher_2 === approver.id) {
+                return { success: false, msg: 'You have already approved this ticket.' };
+            }
 
-        // DB Logic: Check if already voted
-        const stmt = db.prepare('SELECT * FROM verification_tickets WHERE ticket_id = ?');
-        const ticket = stmt.get(ticketId) as any;
+            if (!currentTicket.voucher_1) {
+                db.prepare('UPDATE verification_tickets SET voucher_1 = ?, status = ? WHERE ticket_id = ?').run(approver.id, 'PENDING_2', ticketId);
+                return { success: true, status: '1/2' };
+            } else {
+                db.prepare('UPDATE verification_tickets SET voucher_2 = ?, status = ? WHERE ticket_id = ?').run(approver.id, 'VERIFIED', ticketId);
+                db.prepare('UPDATE users SET status = ? WHERE discord_id = ?').run('BROTHER', currentTicket.user_id);
+                return { success: true, status: 'VERIFIED', userId: currentTicket.user_id };
+            }
+        });
 
-        if (!ticket) {
-            await interaction.reply({ content: 'Ticket not found.', ephemeral: true });
+        const result = processApproval();
+
+        if (!result.success) {
+            await interaction.reply({ content: result.msg, ephemeral: true });
             return;
         }
 
-        if (ticket.voucher_1 === approver.id || ticket.voucher_2 === approver.id) {
-            await interaction.reply({ content: 'You have already approved this ticket.', ephemeral: true });
-            return;
-        }
-
-        if (!ticket.voucher_1) {
-            db.prepare('UPDATE verification_tickets SET voucher_1 = ?, status = ? WHERE ticket_id = ?').run(approver.id, 'PENDING_2', ticketId);
-            await interaction.reply({ content: `✅ First approval recorded for Ticket ${ticketId}. One more needed.`, ephemeral: true });
-            // Update Embed (Not implemented in stub)
-        } else {
-            db.prepare('UPDATE verification_tickets SET voucher_2 = ?, status = ? WHERE ticket_id = ?').run(approver.id, 'VERIFIED', ticketId);
-            // Grant Role Logic (Stub)
-            await interaction.reply({ content: `✅✅ Second approval recorded! User has been Verified.`, ephemeral: true });
+        if (result.status === '1/2') {
+             await interaction.reply({ content: `✅ First approval recorded for Ticket ${ticketId}. One more needed.`, ephemeral: true });
+        } else if (result.status === 'VERIFIED') {
+             // Grant Role
+             const guild = interaction.guild;
+             const member = await guild?.members.fetch(result.userId);
+             // Note: Role name must match exactly what is in Discord
+             const brotherRole = guild?.roles.cache.find(r => r.name === '🦁 ΓΠ Brother');
+             
+             if (member && brotherRole) {
+                 await member.roles.add(brotherRole);
+                 await interaction.reply({ content: `✅✅ Second approval recorded! **${member.user.username}** is now Verified and has the Brother role.`, ephemeral: false });
+             } else {
+                 await interaction.reply({ content: `✅ Verified (Database updated), but failed to assign Discord Role. Check logs.`, ephemeral: true });
+                 console.error('[Access] Role assignment failed. Member or Role not found.');
+             }
         }
     }
 }
@@ -108,31 +131,28 @@ export async function handleAccessModal(interaction: Interaction) {
         `);
         insertTicket.run(ticketId, userId);
 
-        // Notify Admin Channel (Stubbed Channel ID - User must replace)
-        // In prod, fetch channel from config
-        const adminChannelId = 'REPLACE_WITH_CHANNEL_ID'; 
-        
-        // Simulating sending to channel by just acknowledging for now
-        // To really send, we need interaction.guild.channels.cache.get(...)
+        const adminChannelId = config.VERIFICATION_CHANNEL_ID; 
         
         await interaction.reply({ content: `Application Submitted! Ticket ID: ${ticketId}. Please wait for 2 brothers to verify you.`, ephemeral: true });
         
-        // In a real bot, we would send this embed to the admin channel:
-        /*
-        const channel = interaction.guild?.channels.cache.get(adminChannelId) as TextChannel;
-        if (channel) {
-            const embed = new EmbedBuilder()
-                .setTitle('New Verification Request')
-                .addFields(
-                    { name: 'User', value: `<@${userId}>` },
-                    { name: 'Name', value: realName },
-                    { name: 'Chapter', value: chapter },
-                    { name: 'Voucher', value: voucher }
-                );
-            const row = new ActionRowBuilder<ButtonBuilder>()
-                .addComponents(new ButtonBuilder().setCustomId(`approve_ticket_${ticketId}`).setLabel('Approve').setStyle(ButtonStyle.Success));
-            channel.send({ embeds: [embed], components: [row] });
+        if (interaction.guild && adminChannelId) {
+            const channel = interaction.guild.channels.cache.get(adminChannelId) as TextChannel;
+            if (channel) {
+                const embed = new EmbedBuilder()
+                    .setTitle('New Verification Request')
+                    .setColor('#B41528')
+                    .addFields(
+                        { name: 'User', value: `<@${userId}>` },
+                        { name: 'Name', value: realName },
+                        { name: 'Chapter', value: chapter },
+                        { name: 'Voucher', value: voucher }
+                    );
+                const row = new ActionRowBuilder<ButtonBuilder>()
+                    .addComponents(new ButtonBuilder().setCustomId(`approve_ticket_${ticketId}`).setLabel('Approve').setStyle(ButtonStyle.Success));
+                channel.send({ embeds: [embed], components: [row] });
+            } else {
+                console.error(`[Access] Could not find Verification Channel: ${adminChannelId}`);
+            }
         }
-        */
     }
 }

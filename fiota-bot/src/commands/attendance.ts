@@ -33,10 +33,24 @@ export default {
 
         collector?.on('collect', async i => {
             if (i.customId === `attend_${meetingId}`) {
-                // Check if already attended
-                // In a real app, parse the JSON attendees, add UserID, save back.
-                // Simplified:
-                await i.reply({ content: '✅ Checked in!', ephemeral: true });
+                const userId = i.user.id;
+                
+                // Fetch current list
+                const currentMeeting = db.prepare('SELECT attendees FROM attendance WHERE meeting_id = ?').get(meetingId) as any;
+                let attendees: string[] = [];
+                try {
+                    attendees = JSON.parse(currentMeeting.attendees || '[]');
+                } catch (e) { attendees = []; }
+
+                if (attendees.includes(userId)) {
+                     await i.reply({ content: 'You have already checked in!', ephemeral: true });
+                     return;
+                }
+
+                attendees.push(userId);
+                db.prepare('UPDATE attendance SET attendees = ? WHERE meeting_id = ?').run(JSON.stringify(attendees), meetingId);
+
+                await i.reply({ content: '✅ Checked in! Your attendance has been recorded.', ephemeral: true });
             }
         });
 
