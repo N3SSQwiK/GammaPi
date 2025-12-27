@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, Events, Collection } from 'discord.js';
 import { config } from './config';
 import { initDb } from './lib/db';
 import { initScheduler } from './lib/scheduler';
+import logger from './lib/logger';
 import fs from 'fs';
 import path from 'path';
 
@@ -56,7 +57,7 @@ const loadCommands = async () => {
             if ('data' in command && 'execute' in command) {
                 client.commands.set(command.data.name, command);
             } else {
-                console.warn(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+                logger.warn(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
             }
         }));
     }
@@ -75,7 +76,7 @@ const loadCommands = async () => {
 
 // Graceful Shutdown
 process.on('SIGINT', () => {
-    console.log('SIGINT received. Closing DB and exiting...');
+    logger.info('SIGINT received. Closing DB and exiting...');
     // db.close() if db export had a close method, better-sqlite3 closes automatically on exit usually,
     // but explicit close is good practice if we exported the instance directly.
     // Since we import 'db' directly in modules, better-sqlite3 handles process exit cleanup.

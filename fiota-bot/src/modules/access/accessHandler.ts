@@ -3,6 +3,7 @@ import db from '../../lib/db';
 import { config } from '../../config';
 import { userRepository } from '../../lib/repositories/userRepository';
 import { ticketRepository } from '../../lib/repositories/ticketRepository';
+import logger from '../../lib/logger';
 
 export async function handleAccessButton(interaction: Interaction) {
     if (!interaction.isButton()) return;
@@ -98,12 +99,12 @@ export async function handleAccessButton(interaction: Interaction) {
                      await interaction.reply({ content: `✅✅ Second approval recorded! **${member.user.username}** is now Verified and has the Brother role.`, ephemeral: false });
                  } else {
                      await interaction.reply({ content: `✅ Verified (Database updated), but failed to assign Discord Role. Check logs.`, ephemeral: true });
-                     console.error('[Access] Role assignment failed. Member or Role not found.');
+                     logger.error('[Access] Role assignment failed. Member or Role not found.');
                  }
             }
         }
     } catch (error) {
-        console.error('[Access] Button error:', error);
+        logger.error('[Access] Button error:', error);
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: 'An error occurred while processing your request.', ephemeral: true });
         }
@@ -153,12 +154,12 @@ export async function handleAccessModal(interaction: Interaction) {
                         .addComponents(new ButtonBuilder().setCustomId(`approve_ticket_${ticketId}`).setLabel('Approve').setStyle(ButtonStyle.Success));
                     await channel.send({ embeds: [embed], components: [row] });
                 } else {
-                    console.error(`[Access] Could not find Verification Channel: ${adminChannelId}`);
+                    logger.error(`[Access] Could not find Verification Channel: ${adminChannelId}`);
                 }
             }
         }
     } catch (error) {
-        console.error('[Access] Modal error:', error);
+        logger.error('[Access] Modal error:', error);
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: 'An error occurred while processing your request.', ephemeral: true });
         }

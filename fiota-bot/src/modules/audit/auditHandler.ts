@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, ChannelType, GuildChannel, ForumChannel, Guild, TextChannel } from 'discord.js';
 import { EXPECTED_ROLES, EXPECTED_CHANNELS, FORBIDDEN_EVERYONE_PERMS } from './serverConfig';
 import { config } from '../../config';
+import logger from '../../lib/logger';
 
 /**
  * Core Audit Logic: Performs the validation and returns the Embed
@@ -97,13 +98,13 @@ export async function runAudit(interaction: ChatInputCommandInteraction) {
  */
 export async function runAutomatedAudit(guild: Guild) {
     if (!config.AUDIT_CHANNEL_ID) {
-        console.warn('[Audit] Automation skipped: No AUDIT_CHANNEL_ID configured.');
+        logger.warn('[Audit] Automation skipped: No AUDIT_CHANNEL_ID configured.');
         return;
     }
 
     const channel = await guild.channels.fetch(config.AUDIT_CHANNEL_ID) as TextChannel;
     if (!channel) {
-        console.error(`[Audit] Automation error: Could not find channel ${config.AUDIT_CHANNEL_ID}`);
+        logger.error(`[Audit] Automation error: Could not find channel ${config.AUDIT_CHANNEL_ID}`);
         return;
     }
 
