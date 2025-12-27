@@ -1,10 +1,11 @@
-import { ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, ChannelType, GuildChannel, ForumChannel } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, ChannelType, GuildChannel, ForumChannel, Guild, TextChannel } from 'discord.js';
 import { EXPECTED_ROLES, EXPECTED_CHANNELS, FORBIDDEN_EVERYONE_PERMS } from './serverConfig';
+import { config } from '../../config';
 
-export async function runAudit(interaction: ChatInputCommandInteraction) {
-    const guild = interaction.guild;
-    if (!guild) return;
-
+/**
+ * Core Audit Logic: Performs the validation and returns the Embed
+ */
+export async function performAudit(guild: Guild): Promise<EmbedBuilder> {
     const report: string[] = [];
     let issues = 0;
 
@@ -72,9 +73,40 @@ ${tag}
 
     const embed = new EmbedBuilder()
         .setTitle('🛡️ Server Audit Report')
-        .setColor(issues === 0 ? '#00FF00' : '#FF0000')
+        .setColor(issues === 0 ? 0x00FF00 : 0xFF0000)
         .setDescription(report.length > 0 ? report.join('\n') : '✅ **All Systems Nominal.** Server configuration matches the Spec.')
         .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    return embed;
+}
+
+/**
+ * Handler for the /audit Slash Command
+ */
+export async function runAudit(interaction: ChatInputCommandInteraction) {
+    const guild = interaction.guild;
+    if (!guild) return;
+
+    await interaction.deferReply();
+    const embed = await performAudit(guild);
+    await interaction.editReply({ embeds: [embed] });
+}
+
+/**
+ * Automated Audit Trigger (called by scheduler)
+ */
+export async function runAutomatedAudit(guild: Guild) {
+    if (!config.AUDIT_CHANNEL_ID) {
+        console.warn('[Audit] Automation skipped: No AUDIT_CHANNEL_ID configured.');
+        return;
+    }
+
+    const channel = await guild.channels.fetch(config.AUDIT_CHANNEL_ID) as TextChannel;
+    if (!channel) {
+        console.error(`[Audit] Automation error: Could not find channel ${config.AUDIT_CHANNEL_ID}`);
+        return;
+    }
+
+    const embed = await performAudit(guild);
+    await channel.send({ content: '📊 **Weekly Scheduled Security Audit**', embeds: [embed] });
 }

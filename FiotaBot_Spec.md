@@ -59,6 +59,16 @@ FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its
     *   **Action:** Updates user's progress in a local DB.
     *   **Logic:** If `History_Module` = Complete, unlock `#history-channel`.
 
+### 2.4 Audit & Compliance Module
+*   **Command:** `/audit`
+    *   **Action:** Scans server Role/Channel/Permission structure.
+    *   **Logic:** Compares `interaction.guild` state against a hardcoded "Golden Config".
+    *   **Output:** Embed Report (Pass/Fail) listing missing roles or dangerous permissions.
+
+### 2.5 Scheduler Module (Automation)
+*   **Technology:** `node-cron`
+*   **Task A: Weekly Audit:** Runs every Monday at 9:00 AM. Executes the Audit logic and posts the report to `AUDIT_CHANNEL_ID`.
+
 ## 3. Data Structure (Schema)
 
 ### Table: Users

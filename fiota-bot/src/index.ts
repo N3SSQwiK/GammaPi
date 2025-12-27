@@ -1,6 +1,7 @@
 import { Client, GatewayIntentBits, Events, Collection } from 'discord.js';
 import { config } from './config';
 import { initDb } from './lib/db';
+import { initScheduler } from './lib/scheduler';
 import fs from 'fs';
 import path from 'path';
 
@@ -60,5 +61,9 @@ if (fs.existsSync(commandsPath)) {
         });
     }
 }
+
+client.once(Events.ClientReady, (c) => {
+    initScheduler(c);
+});
 
 client.login(config.DISCORD_TOKEN);

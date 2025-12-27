@@ -84,6 +84,8 @@
         DISCORD_TOKEN=paste_your_token_from_step_1.1_here
         CLIENT_ID=paste_your_client_id_here
         GUILD_ID=right_click_your_discord_server_icon_and_copy_id
+        AUDIT_CHANNEL_ID=right_click_your_admin_channel_and_copy_id
+        AUDIT_CRON_SCHEDULE="0 9 * * 1"
         ```
     *   **Save:** Press `Ctrl+O`, then `Enter`.
     *   **Exit:** Press `Ctrl+X`.

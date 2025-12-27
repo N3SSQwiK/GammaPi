@@ -14,7 +14,7 @@ Located in `fiota-bot/`, this custom Discord bot (Node.js/TypeScript) handles th
 *   **Pipeline Tracking**: Status management for Candidates and Interests (`/pipeline`).
 *   **Chapter Ops**: Integrated commands for `/attendance`, `/vote`, and `/mentor` toggles.
 *   **Geographic Profiles**: Automatic derivation of City/State/Timezone from Zip Codes.
-*   **Server Audit**: Programmatic validation of permissions, channels, and tags via `/audit`.
+*   **Server Audit**: Programmatic validation of permissions, channels, and tags via `/audit` or **Weekly Automated Check**.
 
 ### 🏛️ PillarFunFacts (Historical Engagement)
 Located in `PillarFunFacts/`, these n8n workflows provide daily historical content to keep the brotherhood grounded in our history.

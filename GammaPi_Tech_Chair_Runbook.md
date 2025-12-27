@@ -25,10 +25,11 @@ When a developer pushes changes to GitHub:
 ### 6. Verify: `pm2 logs FiotaBot` (Watch for "Ready! Logged in as..." message).
 
 ### 🛡️ Server Auditing
-Run the `/audit` command monthly to ensure:
+The audit is now **automated** to run every Monday at 9 AM. 
 1.  **Security:** No dangerous permissions leaked to `@everyone`.
 2.  **Structure:** All required Forums (e.g., `#lions-den`) and Tags exist.
 3.  **Roles:** Essential roles like `Line Committee` haven't been deleted.
+*Note: You can adjust the schedule in the `.env` file using the `AUDIT_CRON_SCHEDULE` variable (Standard Cron format).*
 
 ### 🚑 The "Bot is Dead" Checklist
 If the bot isn't responding:
