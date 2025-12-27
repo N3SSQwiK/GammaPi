@@ -1,30 +1,40 @@
-# Gamma Pi Project
+# Gamma Pi: Digital Chapter Hub (Phi Iota Alpha)
 
-This project contains automation tools and content for the **Gamma Pi** fraternity (Phi Iota Alpha).
+This project serves as the central repository for the digital migration, engagement, and management of the **Gamma Pi Graduate/Professional Chapter** of Phi Iota Alpha Fraternity.
 
-## 🏛️ PillarFunFacts (Discord Bot)
+## 🚀 Overview
+We are moving chapter operations to Discord to foster professional engagement, streamline internal business, and enhance our public visibility via LinkedIn. This repository contains the custom automation (n8n), the chapter management bot (FiotaBot), and all strategic documentation.
 
-Located in `PillarFunFacts/`, this is an n8n automation that posts a "Did You Know?" history fact daily to our Discord server.
+## 🤖 Software & Automation
 
-### Features
-*   **Topic Selection**: Randomly picks from the 5 Pillars (Bolivar, San Martin, O'Higgins, Marti, Juarez) or key historical dates (Founding, Merger).
-*   **Sources**:
-    *   **Seed List**: Hardcoded topics relevant to our history.
-    *   **Wikipedia**: Primary source of knowledge.
-    *   **AI Enhancement**: Uses Google Gemini to find specific "nuggets" of wisdom rather than generic summaries.
-*   **Delivery**: Posts a rich Embed to Discord with an image and a "Relevance" footer.
+### 🦁 FiotaBot (Chapter Management)
+Located in `fiota-bot/`, this custom Discord bot (Node.js/TypeScript) handles the chapter's core "Identity and Operations."
+*   **Dual-Voucher Verification**: Secure onboarding requiring 2 active brothers to approve new members.
+*   **Professional Rolodex**: Searchable database of brothers by Industry and Job Title (`/find`).
+*   **Pipeline Tracking**: Status management for Candidates and Interests (`/pipeline`).
+*   **Chapter Ops**: Integrated commands for `/attendance`, `/vote`, and `/mentor` toggles.
+*   **Geographic Profiles**: Automatic derivation of City/State/Timezone from Zip Codes.
 
-### 📂 Files
-*   `seed_topics.json`: The list of topics (Pillars, History, Concepts) used by the randomizer.
-*   `n8n_workflow_v2.json` (**Recommended**): The "Smart" version. Scrapes full HTML and uses Gemini AI to write the post.
-*   `n8n_workflow.json` (Legacy): The "Basic" version. Uses Wikipedia's standard summary API (no AI).
+### 🏛️ PillarFunFacts (Historical Engagement)
+Located in `PillarFunFacts/`, these n8n workflows provide daily historical content to keep the brotherhood grounded in our history.
+*   **AI Enhancement**: Uses Google Gemini to find specific "nuggets" of wisdom from our 5 Pillars.
+*   **Multi-Source**: Combines internal seed lists with Wikipedia data.
 
-### 🚀 Deployment Guide
-1.  **Install n8n**: Ensure you have n8n running (Community Edition).
-2.  **Import**: Import `PillarFunFacts/n8n_workflow_v2.json` into your n8n dashboard.
-3.  **Config**:
-    *   **Credentials**: Add your **Google Gemini API Key** to the Gemini node.
-    *   **Webhook**: Add your **Discord Webhook URL** to the Discord node.
-4.  **Run**: Click "Execute Workflow" to test.
+## 📄 Strategic Documentation
+Essential guides for chapter leadership and tech chairs:
+*   **[Migration Strategy](GammaPi_Discord_Migration_Report.md)**: The "Why" and "How" of our move to Discord.
+*   **[Implementation SOP](FiotaBot_Implementation_SOP.md)**: Granular, step-by-step guide for deploying FiotaBot on Hostinger.
+*   **[Platform Comparison](Discord_vs_WhatsApp_Comparison.md)**: Analysis of why Discord was chosen over WhatsApp.
+*   **[Technical Spec](FiotaBot_Spec.md)**: Deep dive into the bot's architecture and schema.
 
-> *Note: If you run into Wikipedia API errors, ensure the `User-Agent` header in the HTTP Request node is set to `GammaPiBot/1.0`.*
+## 🛠️ Development & Specs
+This project utilizes **OpenSpec** for spec-driven development.
+*   All requirements and scenarios are documented in `openspec/specs/`.
+*   Changes are proposed and tracked in `openspec/changes/`.
+
+### Deployment Quick-Start
+1.  **FiotaBot**: See `FiotaBot_Implementation_SOP.md`.
+2.  **n8n**: Import `.json` files from `PillarFunFacts/` into your n8n instance and configure your Gemini API Key.
+
+---
+**Gamma Pi Chapter** | *Semper Semper*
