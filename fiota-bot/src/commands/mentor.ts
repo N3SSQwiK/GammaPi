@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import db from '../lib/db';
+import { userRepository } from '../lib/repositories/userRepository';
 
 export default {
     data: new SlashCommandBuilder()
@@ -15,16 +15,14 @@ export default {
             )),
     async execute(interaction: ChatInputCommandInteraction) {
         const status = interaction.options.getString('status', true);
-        const isMentor = status === 'ON' ? 1 : 0;
+        const isMentor = status === 'ON';
         const userId = interaction.user.id;
 
-        // Update DB
-        const stmt = db.prepare('UPDATE users SET is_mentor = ? WHERE discord_id = ?');
-        const info = stmt.run(isMentor, userId);
-
-        if (info.changes === 0) {
-            // User not in DB yet (maybe manual verify?)
-            db.prepare('INSERT INTO users (discord_id, is_mentor) VALUES (?, ?)').run(userId, isMentor);
+        const user = userRepository.getByDiscordId(userId);
+        if (!user) {
+            userRepository.upsert({ discord_id: userId, is_mentor: isMentor ? 1 : 0 });
+        } else {
+            userRepository.updateMentorship(userId, isMentor);
         }
 
         // Add/Remove Role (Stub)

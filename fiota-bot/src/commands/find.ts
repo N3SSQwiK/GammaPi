@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import db from '../lib/db';
+import { userRepository } from '../lib/repositories/userRepository';
 
 export default {
     data: new SlashCommandBuilder()
@@ -10,16 +10,12 @@ export default {
     async execute(interaction: ChatInputCommandInteraction) {
         const industry = interaction.options.getString('industry');
         
-        let query = 'SELECT real_name, industry, zip_code FROM users WHERE status = "BROTHER"';
-        const params: any[] = [];
-
-        if (industry) {
-            query += ' AND industry LIKE ?';
-            params.push(`%${industry}%`);
+        if (!industry) {
+            await interaction.reply({ content: 'Please provide an industry to search for.', ephemeral: true });
+            return;
         }
 
-        const stmt = db.prepare(query);
-        const results = stmt.all(...params) as any[];
+        const results = userRepository.findBrothersByIndustry(industry);
 
         if (results.length === 0) {
             await interaction.reply({ content: 'No brothers found matching your criteria.', ephemeral: true });
@@ -27,6 +23,6 @@ export default {
         }
 
         const list = results.map(u => `• **${u.real_name}** - ${u.industry || 'N/A'} (${u.zip_code})`).join('\n');
-        await interaction.reply({ content: `**Found Brothers:**\n${list}`, ephemeral: true });
+        await interaction.reply({ content: `**Found Brothers:**\n${list.substring(0, 1900)}`, ephemeral: true });
     },
 };

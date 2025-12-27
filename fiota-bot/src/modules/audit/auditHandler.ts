@@ -74,7 +74,7 @@ ${tag}
     const embed = new EmbedBuilder()
         .setTitle('🛡️ Server Audit Report')
         .setColor(issues === 0 ? 0x00FF00 : 0xFF0000)
-        .setDescription(report.length > 0 ? report.join('\n') : '✅ **All Systems Nominal.** Server configuration matches the Spec.')
+        .setDescription(report.length > 0 ? report.join('\n').substring(0, 4000) : '✅ **All Systems Nominal.** Server configuration matches the Spec.')
         .setTimestamp();
 
     return embed;
