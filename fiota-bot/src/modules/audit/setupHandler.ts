@@ -33,12 +33,29 @@ export async function runSetup(guild: Guild): Promise<string[]> {
                 const newChannel = await guild.channels.create({
                     name: expected.name,
                     type: expected.type as any,
+                    topic: (expected as any).guidelines,
+                    defaultReactionEmoji: (expected as any).defaultReaction ? { name: (expected as any).defaultReaction, id: null } : undefined,
                     reason: 'FiotaBot Setup: Initializing Golden State'
                 });
                 report.push(`✅ Created Channel: #${expected.name}`);
                 found = newChannel;
             } catch (e) {
                 report.push(`❌ Failed to create Channel #${expected.name}: ${e}`);
+            }
+        } else {
+            // Update existing Forum Guidelines/Reaction if needed
+            if (found.type === ChannelType.GuildForum) {
+                const forum = found as ForumChannel;
+                const expectedGuidelines = (expected as any).guidelines;
+                const expectedReaction = (expected as any).defaultReaction;
+
+                if (expectedGuidelines && forum.topic !== expectedGuidelines) {
+                    await forum.setTopic(expectedGuidelines);
+                    report.push(`✅ Updated Guidelines for #${expected.name}`);
+                }
+                
+                // Note: Updating defaultReactionEmoji is complex because it requires exact emoji format/ID match. 
+                // Skipping "Update" logic for reaction to avoid API errors on existing channels.
             }
         }
 

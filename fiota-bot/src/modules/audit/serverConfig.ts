@@ -28,16 +28,22 @@ export const EXPECTED_CHANNELS = [
     { 
         name: 'career-center', 
         type: ChannelType.GuildForum, 
-        tags: ['💼 Hiring', '👀 Seeking', '📍 Remote'] 
+        tags: ['💼 Hiring', '👀 Seeking', '📍 Remote'],
+        guidelines: "Post job opportunities or ask for career advice. Use tags to help brothers filter.",
+        defaultReaction: '💼'
     },
     { 
         name: 'lions-den', 
         type: ChannelType.GuildForum, 
-        tags: ['👋 My Life', '🏋️ Fitness', '👨‍💻 Projects'] 
+        tags: ['👋 My Life', '🏋️ Fitness', '👨‍💻 Projects', '🎮 Gaming', '🍳 Food', '🤝 Philanthropy', '📚 Education', '💪 Training'],
+        guidelines: "Create ONE thread to serve as your personal blog/feed. Share updates on your life, projects, or fitness journey. Follow other brothers to stay connected.",
+        defaultReaction: '🦁'
     },
     {
         name: 'tech-support',
         type: ChannelType.GuildForum,
-        tags: ['🐛 Bug', '✨ Feature']
+        tags: ['🐛 Bug', '✨ Feature'],
+        guidelines: "Report bugs or suggest features for FiotaBot.",
+        defaultReaction: '🐛'
     }
 ];
