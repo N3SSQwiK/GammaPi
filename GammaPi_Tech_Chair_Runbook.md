@@ -21,8 +21,9 @@ When a developer pushes changes to GitHub:
 2.  **Navigate:** `cd /root/fiota-bot`
 3.  **Pull Code:** `git pull`
 4.  **Rebuild:** `npm install && npm run build`
-5.  **Restart:** `pm2 restart FiotaBot`
-6.  **Verify:** `pm2 logs FiotaBot` OR `tail -f logs/combined.log`.
+5.  **Deploy Commands:** `npm run deploy` (Only needed if new commands were added, but safe to run always).
+6.  **Restart:** `pm2 restart FiotaBot`
+7.  **Verify:** `pm2 logs FiotaBot` OR `tail -f logs/combined.log`.
 
 ### 🛡️ Server Auditing
 The audit is now **automated** to run every Monday at 9 AM. 

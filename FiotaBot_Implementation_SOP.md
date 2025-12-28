@@ -104,7 +104,13 @@
     npm run build
     ```
     *   *Success Check:* If you see no red errors, you are good.
-3.  **Start with PM2:**
+3.  **Register Slash Commands:**
+    *   **CRITICAL STEP:** This tells Discord what commands exist.
+    ```bash
+    npm run deploy
+    ```
+    *   *Success Check:* "Successfully reloaded application (/) commands."
+4.  **Start with PM2:**
     ```bash
     pm2 start dist/index.js --name "FiotaBot"
     ```
