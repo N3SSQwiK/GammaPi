@@ -1,5 +1,5 @@
-import { Guild, ChannelType, ForumChannel } from 'discord.js';
-import { EXPECTED_ROLES, EXPECTED_CHANNELS } from './serverConfig';
+import { Guild, ChannelType, ForumChannel, ChannelFlags, GuildForumTagData } from 'discord.js';
+import { EXPECTED_ROLES, EXPECTED_CHANNELS, ExpectedChannel } from './serverConfig';
 
 export async function runSetup(guild: Guild): Promise<string[]> {
     const report: string[] = [];
@@ -18,8 +18,6 @@ export async function runSetup(guild: Guild): Promise<string[]> {
             } catch (e) {
                 report.push(`❌ Failed to create Role ${roleName}: ${e}`);
             }
-        } else {
-            // report.push(`ℹ️ Role ${roleName} already exists.`);
         }
     }
 
@@ -33,12 +31,18 @@ export async function runSetup(guild: Guild): Promise<string[]> {
                 const newChannel = await guild.channels.create({
                     name: expected.name,
                     type: expected.type as any,
-                    topic: (expected as any).guidelines,
-                    defaultReactionEmoji: (expected as any).defaultReaction ? { name: (expected as any).defaultReaction, id: null } : undefined,
+                    topic: expected.guidelines,
+                    defaultReactionEmoji: expected.defaultReaction ? { name: expected.defaultReaction, id: null } : undefined,
                     reason: 'FiotaBot Setup: Initializing Golden State'
                 });
+                
                 report.push(`✅ Created Channel: #${expected.name}`);
                 found = newChannel;
+
+                // Set flags if needed
+                if (found && expected.requireTag && found.type === ChannelType.GuildForum) {
+                    await (found as ForumChannel).edit({ flags: [ChannelFlags.RequireTag] });
+                }
             } catch (e) {
                 report.push(`❌ Failed to create Channel #${expected.name}: ${e}`);
             }
@@ -46,16 +50,20 @@ export async function runSetup(guild: Guild): Promise<string[]> {
             // Update existing Forum Guidelines/Reaction if needed
             if (found.type === ChannelType.GuildForum) {
                 const forum = found as ForumChannel;
-                const expectedGuidelines = (expected as any).guidelines;
-                const expectedReaction = (expected as any).defaultReaction;
+                let updateData: any = {};
 
-                if (expectedGuidelines && forum.topic !== expectedGuidelines) {
-                    await forum.setTopic(expectedGuidelines);
-                    report.push(`✅ Updated Guidelines for #${expected.name}`);
+                if (expected.guidelines && forum.topic !== expected.guidelines) {
+                    updateData.topic = expected.guidelines;
+                }
+
+                if (expected.requireTag && !forum.flags.has(ChannelFlags.RequireTag)) {
+                    updateData.flags = [ChannelFlags.RequireTag];
                 }
                 
-                // Note: Updating defaultReactionEmoji is complex because it requires exact emoji format/ID match. 
-                // Skipping "Update" logic for reaction to avoid API errors on existing channels.
+                if (Object.keys(updateData).length > 0) {
+                    await forum.edit(updateData);
+                    report.push(`✅ Updated settings for #${expected.name}`);
+                }
             }
         }
 
@@ -64,20 +72,27 @@ export async function runSetup(guild: Guild): Promise<string[]> {
             const forum = found as ForumChannel;
             const existingTags = forum.availableTags;
             const existingTagNames = existingTags.map(t => t.name);
-            const tagsToAdd: any[] = [];
+            const tagsToAdd: GuildForumTagData[] = [];
 
-            for (const tag of expected.tags) {
-                if (!existingTagNames.includes(tag)) {
-                    tagsToAdd.push({ name: tag });
+            for (const tagName of expected.tags) {
+                if (!existingTagNames.includes(tagName)) {
+                    tagsToAdd.push({ name: tagName });
                 }
             }
 
             if (tagsToAdd.length > 0) {
                 try {
-                    // We must provide ALL tags (existing + new) to setAvailableTags
-                    // But actually, setAvailableTags accepts the new array.
-                    // Let's just append.
-                    const newTagSet = [...existingTags, ...tagsToAdd];
+                    // Combine existing tags with new ones
+                    const newTagSet: GuildForumTagData[] = [
+                        ...existingTags.map(t => ({
+                            name: t.name,
+                            emojiId: t.emoji?.id || undefined,
+                            emojiName: t.emoji?.name || undefined,
+                            moderated: t.moderated
+                        })), 
+                        ...tagsToAdd
+                    ];
+                    
                     await forum.setAvailableTags(newTagSet);
                     report.push(`✅ Added ${tagsToAdd.length} tags to #${expected.name}`);
                 } catch (e) {

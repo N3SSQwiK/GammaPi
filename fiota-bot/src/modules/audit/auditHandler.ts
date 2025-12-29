@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, ChannelType, GuildChannel, ForumChannel, Guild, TextChannel } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField, ChannelType, GuildChannel, ForumChannel, Guild, TextChannel, ChannelFlags } from 'discord.js';
 import { EXPECTED_ROLES, EXPECTED_CHANNELS, FORBIDDEN_EVERYONE_PERMS } from './serverConfig';
 import { config } from '../../config';
 import logger from '../../lib/logger';
