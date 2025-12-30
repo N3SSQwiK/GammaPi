@@ -33,6 +33,26 @@ This project utilizes **OpenSpec** for spec-driven development.
 *   All requirements and scenarios are documented in `openspec/specs/`.
 *   Changes are proposed and tracked in `openspec/changes/`.
 
+## 🗺️ Roadmap & Planned Features
+
+Active proposals in `openspec/changes/` for upcoming features:
+
+### Engagement Features
+| Proposal | Description | Status |
+|----------|-------------|--------|
+| **Interactive Content** | Pop Quiz trivia, Brother Spotlight rotation, Industry Pulse discussions | 📋 Proposed |
+| **Gamification System** | Achievement badges, structured Wins channel, quarterly roundups | 📋 Proposed |
+| **Networking Automation** | Office Hours Roulette (monthly coffee chats), geographic clustering for local meetups | 📋 Proposed |
+| **Engagement Infrastructure** | Weekly Pulse email digest, Knowledge Vault crowdsourced tips forum | 📋 Proposed |
+| **LinkedIn Bridge** | Career milestone detection, chapter content amplification, OAuth verification | 📋 Proposed |
+
+### Core Improvements
+| Proposal | Description | Status |
+|----------|-------------|--------|
+| **Enhanced Verification UX** | Multi-step flow with chapter/industry dropdowns, don name tracking, international address support | 📋 Proposed |
+
+See individual proposals in `openspec/changes/` for full specifications and implementation tasks.
+
 ## ⚡ Day 0: Server Provisioning (Quick Setup)
 If you are starting with a blank Discord server, follow these steps to build the infrastructure in seconds:
 

@@ -85,7 +85,56 @@ To check the database without the bot:
 
 ---
 
-## 6. Security Protocols
+## 6. Data Maintenance (Quarterly)
+
+### 🏛️ Chapter List Updates
+The chapter list (`CHAPTERS` constant in `src/lib/constants.ts`) should be reviewed quarterly:
+
+**Schedule:** First week of January, April, July, October
+
+**Process:**
+1.  **Check Source:** Visit [phiota.org/chapters](https://www.phiota.org/chapters)
+2.  **Compare:** Cross-reference website list with `CHAPTERS` constant in codebase
+3.  **Add New Chapters:**
+    *   New colonizations → Add with `hidden: false`
+    *   Format: `{ value: 'greek-letters', label: 'Full Name Chapter', institution: 'University', state: 'State', type: 'Undergraduate', hidden: false }`
+4.  **Mark Inactive:** If chapter closes → Add `inactive: true` (don't delete - preserves historical data)
+5.  **Deploy:** Submit PR, rebuild bot, restart PM2
+6.  **Special:** Omega chapter is always `hidden: true` (deceased brothers only, E-Board assignment via `/chapter-assign`)
+
+### 💼 Industry List Maintenance
+The industry list (`INDUSTRIES` constant) is based on NAICS taxonomy:
+
+**When to Add Industries:**
+*   E-Board reports >3 brothers selected "Other" for same industry
+*   Review "Other" selections monthly in database
+
+**Process:**
+1.  Query database: `SELECT industry FROM users WHERE industry LIKE '%Other%';`
+2.  Identify patterns (e.g., multiple "Blockchain" entries)
+3.  Add new industry to `INDUSTRIES` array in alphabetical order
+4.  Update `INDUSTRY_MIGRATION_MAP` to auto-categorize future similar entries
+5.  Deploy changes
+
+### 📊 Data Quality Checks
+Monthly database hygiene:
+```bash
+# SSH into server
+sqlite3 /root/fiota.db
+
+# Check for unmapped industries
+SELECT industry, COUNT(*) FROM users GROUP BY industry ORDER BY COUNT(*) DESC;
+
+# Find incomplete profiles (missing key fields)
+SELECT discord_id, real_name FROM users WHERE industry IS NULL OR zip_code IS NULL;
+
+# Verify all brothers have vouchers recorded
+SELECT user_id FROM verification_tickets WHERE status = 'VERIFIED' AND (voucher_1 IS NULL OR voucher_2 IS NULL);
+```
+
+---
+
+## 7. Security Protocols
 *   **New Tech Chair Transition:**
     1.  Rotate the **Discord Bot Token** in Developer Portal.
     2.  Rotate **Hostinger SSH Keys/Password**.
