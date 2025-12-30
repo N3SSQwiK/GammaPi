@@ -73,9 +73,32 @@ FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its
 | `real_name` | String | From Verification or LinkedIn |
 | `status` | Enum | `GUEST`, `BROTHER`, `OFFICER` |
 | `zip_code` | String | 5-digit Zip |
-| `industry` | String | e.g. "Tech", "Finance" |
+| `location_meta` | JSON String | Derived city/state/timezone |
+| `industry` | String | e.g. "Technology / Software" |
 | `job_title` | String | e.g. "Senior Engineer" |
 | `is_mentor` | Integer | 1 (True) or 0 (False) |
+| `linked_in_id` | String | LinkedIn profile URL (optional) |
+| `vouched_by` | JSON String | Array of voucher Discord IDs |
+
+### 📋 Pending Schema Additions (See `openspec/changes/enhance-verification-ux`)
+
+The following fields are proposed and will be added when the Enhanced Verification UX proposal is implemented:
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `first_name` | String | First name (split from real_name) |
+| `middle_name` | String | Middle name (optional) |
+| `last_name` | String | Last name (split from real_name) |
+| `don_name` | String | Fraternity nickname (e.g., "Phoenix") |
+| `phone_number` | String | Contact phone (international format) |
+| `chapter` | String | Chapter designation (e.g., "Gamma Pi") |
+| `initiation_year` | Integer | Year of crossing (1931-2029) |
+| `initiation_semester` | String | "Spring" or "Fall" |
+| `city` | String | City (derived from zip or international) |
+| `state_province` | String | State/Province |
+| `country` | String | Country (default: "United States") |
+
+**Display Name Priority:** When `don_name` is set, displays as "Don {don_name} ({first_name} {last_name})"
 
 ### Table: Attendance
 | Field | Type | Description |

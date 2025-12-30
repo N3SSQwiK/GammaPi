@@ -1,75 +1,206 @@
 # Gamma Pi: Digital Chapter Hub
 
+This file provides guidance to Google Gemini and other AI assistants when working with code in this repository.
+
 ## Project Overview
 
-This repository serves as the central hub for the **Gamma Pi Graduate/Professional Chapter** of **Phi Iota Alpha Fraternity**. It houses the custom software, automation workflows, and strategic documentation required to migrate chapter operations to a modern, automated Discord environment.
+**Gamma Pi** is the digital chapter hub for the Gamma Pi Graduate/Professional Chapter of **Phi Iota Alpha Fraternity**. This repository contains two main software components plus comprehensive strategic documentation for migrating chapter operations to Discord.
 
-The primary goal is to foster professional engagement, streamline internal business, and enhance public visibility via LinkedIn, moving away from legacy tools like WhatsApp for core operations.
+### Main Components
 
-### Key Components
+1. **FiotaBot** (`fiota-bot/`) - Custom Discord bot for chapter management
+2. **PillarFunFacts** (`PillarFunFacts/`) - Automated historical content workflows
+3. **Strategic Documentation** - Migration guides, SOPs, and runbooks
 
-*   **FiotaBot (`fiota-bot/`):** A custom Discord bot built with Node.js and TypeScript. It handles:
-    *   **Identity Management:** Dual-voucher verification for new members.
-    *   **Operations:** Attendance tracking, voting, and mentorship toggles.
-    *   **Automation:** Weekly server audits and "Golden State" configuration enforcement.
-    *   **Networking:** A searchable "Rolodex" of brothers by industry.
-*   **PillarFunFacts (`PillarFunFacts/`):** Automation workflows (n8n) that post daily historical facts enriched by AI (Google Gemini) to keep the brotherhood grounded in its history.
-*   **Strategic Documentation:** Comprehensive guides on migration strategy, permissions, and operational runbooks.
+## FiotaBot Architecture
 
-## Building and Running (FiotaBot)
+### Technology Stack
+- **Language**: TypeScript (strict mode)
+- **Runtime**: Node.js (LTS)
+- **Framework**: Discord.js v14
+- **Database**: SQLite with better-sqlite3
+- **Logging**: Winston
+- **Scheduling**: node-cron
+- **Process Manager**: PM2 (production)
 
-The bot is designed to be self-hosted on a VPS (e.g., Hostinger).
+### Project Structure
+```
+fiota-bot/
+├── src/
+│   ├── index.ts                 # Bot entry point
+│   ├── deploy-commands.ts       # Slash command registration
+│   ├── commands/                # Discord slash commands
+│   ├── modules/                 # Business logic modules
+│   │   ├── access/             # Verification & onboarding
+│   │   ├── audit/              # Server audit & Golden State
+│   │   ├── identity/           # User profiles & geographic data
+│   │   ├── networking/         # Rolodex & search
+│   │   └── operations/         # Attendance, voting, etc.
+│   └── lib/
+│       ├── db.ts               # Database connection
+│       ├── logger.ts           # Winston configuration
+│       ├── scheduler.ts        # Cron job setup
+│       └── repositories/       # Data access layer
+├── package.json
+└── tsconfig.json
+```
 
-### Prerequisites
-*   Node.js (LTS)
-*   npm
-*   A Discord Bot Token and Client ID
+### Key Features
+- **Dual-Voucher Verification**: Two-step member onboarding requiring approval from 2 active brothers
+- **Professional Rolodex**: Searchable database by industry, job title, location (`/find`)
+- **Pipeline Tracking**: Candidate and Interest status management (`/pipeline`)
+- **Server Audit**: Weekly automated validation of roles, channels, permissions (`/audit`)
+- **Golden State Enforcement**: Infrastructure-as-code via `serverConfig.ts` with `/setup` command
+- **Geographic Intelligence**: Auto-derive city/state/timezone from zip codes
 
-### Setup & Run
-1.  **Navigate to the bot directory:**
-    ```bash
-    cd fiota-bot
-    ```
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-3.  **Configure Environment:**
-    Create a `.env` file based on the SOP requirements:
-    ```env
-    DISCORD_TOKEN=your_token
-    CLIENT_ID=your_client_id
-    GUILD_ID=your_server_id
-    VERIFICATION_CHANNEL_ID=your_channel_id
-    AUDIT_CHANNEL_ID=your_channel_id
-    ```
-4.  **Build the project:**
-    ```bash
-    npm run build
-    ```
-5.  **Deploy Slash Commands (First run only):**
-    ```bash
-    npm run deploy
-    ```
-6.  **Start the bot:**
-    ```bash
-    npm start
-    ```
-    *(For production, use `pm2 start dist/index.js`)*
+### Development Commands
+```bash
+cd fiota-bot
+npm install           # Install dependencies
+npm run build         # Compile TypeScript to dist/
+npm run deploy        # Register slash commands (required on first run and after command changes)
+npm start             # Start bot (production: pm2 start dist/index.js)
+```
 
-## Development Conventions
+### Critical Files
+- `src/modules/audit/serverConfig.ts` - The "Golden State" configuration defining all required roles, channels, forum tags, and reactions
+- `src/lib/repositories/` - All database access MUST go through repository pattern (UserRepository, VoteRepository, AttendanceRepository)
+- `src/deploy-commands.ts` - MUST run `npm run deploy` after any changes to slash command definitions
 
-*   **Language:** TypeScript (Strict mode enabled).
-*   **Architecture:** Modular design separating `commands`, `modules` (business logic), and `lib` (infrastructure/repositories).
-*   **Database:** SQLite (`better-sqlite3`) using the Repository Pattern for all data access.
-*   **Infrastructure as Code:** Server structure (Roles, Channels) is defined in `serverConfig.ts` and enforced via the `/setup` and `/audit` commands.
-*   **Spec-Driven:** All changes follow the **OpenSpec** workflow (`openspec/`), requiring a proposal and validation before implementation.
+### Environment Variables
+Required in `.env`:
+```
+DISCORD_TOKEN=          # Bot token from Discord Developer Portal
+CLIENT_ID=              # Application ID
+GUILD_ID=               # Discord server ID
+VERIFICATION_CHANNEL_ID=  # Channel for verification requests
+AUDIT_CHANNEL_ID=         # Channel for audit reports
+```
 
-## Key Files & Directories
+### Database Schema
+SQLite database located at `data/fiota.db`:
+- `users` - Brother profiles with industry, location, verification status
+- `votes` - Voting records with issue tracking
+- `attendance` - Meeting attendance logs
+- `verification_tickets` - Pending verification requests with voucher tracking
 
-*   `fiota-bot/src/index.ts`: The entry point for the Discord bot.
-*   `fiota-bot/src/modules/audit/serverConfig.ts`: The "Golden State" configuration defining required roles and channels.
-*   `fiota-bot/src/lib/repositories/`: Data access layer for Users, Votes, and Attendance.
-*   `PillarFunFacts/n8n_workflow_v2.json`: The main n8n workflow for AI-generated history posts.
-*   `GammaPi_Discord_Migration_Report.md`: The strategic master plan for the community migration.
-*   `FiotaBot_Implementation_SOP.md`: Detailed step-by-step guide for server administrators.
+### Code Conventions
+- **Modular Design**: Separate commands (interface), modules (logic), and lib (infrastructure)
+- **Repository Pattern**: ALL database access goes through repositories in `lib/repositories/`
+- **Type Safety**: Strict TypeScript mode enabled - no `any` types
+- **Error Handling**: Use Winston logger, never silent failures
+- **Spec-Driven**: All changes require OpenSpec proposal and validation
+
+## PillarFunFacts Architecture
+
+### Workflow Versions
+Two n8n workflow versions exist in `PillarFunFacts/`:
+
+- **n8n_workflow.json** (v1): Simple version using Wikipedia Summary API directly
+- **n8n_workflow_v2.json** (v2): Enhanced version with Gemini AI integration
+
+### Workflow Pipeline (v2)
+```
+Daily Schedule (9am) → Pick Random Topic → Fetch Wikipedia HTML → Extract Text & Image → Gemini AI → Discord Webhook
+```
+
+### Topic Categories (seed_topics.json)
+- `Pillar`: The five pillars (Bolívar, San Martín, O'Higgins, Martí, Juárez)
+- `History`: Phi Iota Alpha organizational history
+- `Concept`: Pan-Americanism and related ideologies
+- `General`: Latin American independence events
+
+### n8n Configuration
+- Workflows stored as JSON exports from n8n
+- Credential placeholders use `YOUR_*` pattern (e.g., `YOUR_DISCORD_WEBHOOK_URL_HERE`, `YOUR_GEMINI_CREDENTIAL_ID`)
+- Wikipedia API requests require User-Agent: `GammaPiBot/1.0`
+- Discord embed color: `#B41528` (fraternity red)
+
+## OpenSpec Workflow
+
+This project uses spec-driven development:
+1. All changes start with a proposal in `openspec/changes/`
+2. Specs are validated against requirements in `openspec/specs/`
+3. Changes are applied after approval
+4. Deployed changes are archived
+
+**Key Spec Areas**:
+- `access-control/` - Verification and permission systems
+- `audit/` - Server validation and Golden State
+- `bot-core/` - Core Discord bot infrastructure
+- `identity/` - User profiles and geographic data
+- `networking/` - Rolodex and search functionality
+- `operations/` - Attendance, voting, mentorship
+
+## Critical Documentation Files
+
+- **CLAUDE.md** - AI assistant guidance (for Claude)
+- **FiotaBot_Implementation_SOP.md** - Step-by-step deployment guide
+- **GammaPi_Discord_Migration_Report.md** - Strategic migration plan
+- **FiotaBot_Spec.md** - Technical specification and schema
+- **GammaPi_Tech_Chair_Runbook.md** - Operational runbook for tech chairs
+- **openspec/project.md** - Complete project context and conventions
+
+## Security & Credentials
+
+- **NEVER commit** `.env` files or Discord tokens
+- **Credential Placeholders**: Use `YOUR_*` pattern in templates and documentation
+- **Permission Model**: Least-privilege principle - audit all role permissions
+- **Two-Factor Onboarding**: Dual-voucher system prevents unauthorized access
+
+## Deployment Checklist
+
+Before deploying FiotaBot changes:
+1. ✅ Run `npm run build` - ensure clean TypeScript compilation
+2. ✅ Run `npm run deploy` - register updated slash commands (if command definitions changed)
+3. ✅ Test locally with `npm start`
+4. ✅ Verify environment variables in production `.env`
+5. ✅ Push to git, SSH to VPS, pull changes
+6. ✅ Rebuild on server: `npm install && npm run build`
+7. ✅ Restart PM2: `pm2 restart fiota-bot`
+8. ✅ Run `/audit` in Discord to validate server state
+
+## Common Tasks
+
+**Add a new slash command:**
+1. Create command file in `src/commands/`
+2. Import and add to `index.ts` commands array
+3. Run `npm run deploy` to register with Discord
+4. Restart bot
+
+**Modify server structure:**
+1. Update `src/modules/audit/serverConfig.ts`
+2. Test with `/setup` in a test server
+3. Validate with `/audit`
+
+**Add database fields:**
+1. Update repository in `src/lib/repositories/`
+2. Update TypeScript interfaces
+3. Handle migration (SQLite ALTER TABLE or recreate)
+
+## Planned Features
+
+See `openspec/changes/` for pending feature proposals:
+
+| Proposal | Description |
+|----------|-------------|
+| `enhance-verification-ux` | Multi-step verification, don names, chapter/industry dropdowns |
+| `add-interactive-content` | Pop Quiz, Brother Spotlight, Industry Pulse |
+| `add-gamification-system` | Achievement badges, structured Wins channel |
+| `add-networking-automation` | Office Hours Roulette, geographic clusters |
+| `add-engagement-infrastructure` | Weekly Pulse digest, Knowledge Vault |
+| `add-linkedin-bridge` | LinkedIn profile sync, amplification |
+
+## Domain Context
+
+### Fraternity Terminology
+- **Brother:** Initiated member of Phi Iota Alpha
+- **Don Name:** Fraternity nickname (e.g., "Don Phoenix")
+- **Chapter:** Local organization (e.g., Alpha, Beta, Gamma Pi)
+- **Omega Chapter:** Reserved for deceased brothers (hidden from public)
+- **Voucher:** Brother who confirms identity during verification
+
+### Key Roles
+- **E-Board:** Executive board members with admin privileges
+- **Tech Chair:** Administrator for bot/infrastructure maintenance
+- **Line Committee:** Officers responsible for intake process
