@@ -38,7 +38,10 @@ fiota-bot/
 │   │   │   ├── accessHandler.ts    # Verification flow
 │   │   │   └── rulesHandler.ts     # Code of Conduct agreement
 │   │   ├── audit/              # Server audit & Golden State
-│   │   └── operations/         # Attendance, voting, etc.
+│   │   ├── identity/           # User profiles & geographic data (placeholder)
+│   │   ├── networking/         # Rolodex enhancements (placeholder)
+│   │   ├── operations/         # Attendance, voting, etc.
+│   │   └── pipeline/           # Candidate tracking (placeholder)
 │   └── lib/
 │       ├── db.ts               # Database connection
 │       ├── logger.ts           # Winston configuration
