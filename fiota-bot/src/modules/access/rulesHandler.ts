@@ -90,8 +90,18 @@ export async function handleRulesButton(interaction: Interaction) {
             return;
         }
 
-        // Check if user already has the role (the real source of truth)
-        if (member.roles.cache.has(rulesRole.id)) {
+        const alreadyHasRole = member.roles.cache.has(rulesRole.id);
+
+        // If user already has the role, ensure timestamp is recorded (handles migration edge case)
+        if (alreadyHasRole) {
+            if (!userRepository.hasAgreedToRules(userId)) {
+                try {
+                    userRepository.recordRulesAgreement(userId);
+                    logger.info(`[Rules] Backfilled rules_agreed_at for ${interaction.user.tag} (${userId}) who already had role`);
+                } catch (dbError) {
+                    logger.error('[Rules] Failed to backfill rules_agreed_at:', dbError);
+                }
+            }
             await interaction.reply({
                 content: '✅ You have already agreed to the Code of Conduct.',
                 ephemeral: true
@@ -103,9 +113,13 @@ export async function handleRulesButton(interaction: Interaction) {
         await member.roles.add(rulesRole);
         logger.info(`[Rules] Granted '✅ Rules Accepted' role to ${interaction.user.tag}`);
 
-        // Only record agreement after role is successfully granted
-        userRepository.recordRulesAgreement(userId);
-        logger.info(`[Rules] User ${interaction.user.tag} (${userId}) agreed to Code of Conduct`);
+        // Record agreement - if this fails, log but don't fail the user (they have access)
+        try {
+            userRepository.recordRulesAgreement(userId);
+            logger.info(`[Rules] User ${interaction.user.tag} (${userId}) agreed to Code of Conduct`);
+        } catch (dbError) {
+            logger.error(`[Rules] Failed to record agreement for ${interaction.user.tag}, but role was granted:`, dbError);
+        }
 
         await interaction.reply({
             content:
