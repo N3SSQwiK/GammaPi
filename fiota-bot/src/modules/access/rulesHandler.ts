@@ -77,8 +77,21 @@ export async function handleRulesButton(interaction: Interaction) {
     }
 
     try {
-        // Check if already agreed
-        if (userRepository.hasAgreedToRules(userId)) {
+        const member = await guild.members.fetch(userId);
+        const rulesRole = guild.roles.cache.find(r => r.name === '✅ Rules Accepted');
+
+        // Check if role exists
+        if (!rulesRole) {
+            logger.error('[Rules] "✅ Rules Accepted" role not found. Run /setup to create it.');
+            await interaction.reply({
+                content: '❌ Server configuration error: Rules role not found. Please contact E-Board.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Check if user already has the role (the real source of truth)
+        if (member.roles.cache.has(rulesRole.id)) {
             await interaction.reply({
                 content: '✅ You have already agreed to the Code of Conduct.',
                 ephemeral: true
@@ -86,20 +99,13 @@ export async function handleRulesButton(interaction: Interaction) {
             return;
         }
 
-        // Record the agreement
+        // Grant the role first - if this fails, user can retry
+        await member.roles.add(rulesRole);
+        logger.info(`[Rules] Granted '✅ Rules Accepted' role to ${interaction.user.tag}`);
+
+        // Only record agreement after role is successfully granted
         userRepository.recordRulesAgreement(userId);
         logger.info(`[Rules] User ${interaction.user.tag} (${userId}) agreed to Code of Conduct`);
-
-        // Grant the Rules Accepted role
-        const member = await guild.members.fetch(userId);
-        const rulesRole = guild.roles.cache.find(r => r.name === '✅ Rules Accepted');
-
-        if (rulesRole) {
-            await member.roles.add(rulesRole);
-            logger.info(`[Rules] Granted '✅ Rules Accepted' role to ${interaction.user.tag}`);
-        } else {
-            logger.warn('[Rules] Could not find "✅ Rules Accepted" role. Run /setup to create it.');
-        }
 
         await interaction.reply({
             content:
