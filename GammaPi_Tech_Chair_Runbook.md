@@ -25,11 +25,20 @@ When a developer pushes changes to GitHub:
 6.  **Restart:** `pm2 restart FiotaBot`
 7.  **Verify:** `pm2 logs FiotaBot` OR `tail -f logs/combined.log`.
 
+### 📜 Rules & Verification Setup
+After deploying or updating the bot, ensure the onboarding flow is configured:
+1.  **Post Code of Conduct:** Run `/rules` in `#rules-and-conduct` channel.
+2.  **Post Verification Gate:** Run `/verify` in `#welcome-gate` channel.
+3.  **Configure Permissions:**
+    *   `#rules-and-conduct` - Visible to `@everyone`
+    *   `#welcome-gate` - Visible only to `✅ Rules Accepted` role
+    *   Other channels - Visible only to verified roles (`🦁 ΓΠ Brother`, `🦁 Visiting Brother`, etc.)
+
 ### 🛡️ Server Auditing
-The audit is now **automated** to run every Monday at 9 AM. 
+The audit is now **automated** to run every Monday at 9 AM.
 1.  **Security:** No dangerous permissions leaked to `@everyone`.
 2.  **Structure:** All required Forums (e.g., `#lions-den`) and Tags exist.
-3.  **Roles:** Essential roles like `Line Committee` haven't been deleted.
+3.  **Roles:** Essential roles like `Line Committee` and `✅ Rules Accepted` haven't been deleted.
 *Note: You can adjust the schedule in the `.env` file using the `AUDIT_CRON_SCHEDULE` variable (Standard Cron format).*
 
 ### 🚑 The "Bot is Dead" Checklist
@@ -88,6 +97,9 @@ To check the database without the bot:
 ## 6. Data Maintenance (Quarterly)
 
 ### 🏛️ Chapter List Updates
+> **Note:** The `CHAPTERS` constant will be added in the `enhance-verification-ux` proposal. Until then, chapter information is collected as free text during verification.
+
+**Future Process (after enhance-verification-ux is implemented):**
 The chapter list (`CHAPTERS` constant in `src/lib/constants.ts`) should be reviewed quarterly:
 
 **Schedule:** First week of January, April, July, October
@@ -103,6 +115,9 @@ The chapter list (`CHAPTERS` constant in `src/lib/constants.ts`) should be revie
 6.  **Special:** Omega chapter is always `hidden: true` (deceased brothers only, E-Board assignment via `/chapter-assign`)
 
 ### 💼 Industry List Maintenance
+> **Note:** The `INDUSTRIES` constant will be added in the `enhance-verification-ux` proposal. Until then, industry is collected as free text during verification.
+
+**Future Process (after enhance-verification-ux is implemented):**
 The industry list (`INDUSTRIES` constant) is based on NAICS taxonomy:
 
 **When to Add Industries:**
@@ -130,6 +145,9 @@ SELECT discord_id, real_name FROM users WHERE industry IS NULL OR zip_code IS NU
 
 # Verify all brothers have vouchers recorded
 SELECT user_id FROM verification_tickets WHERE status = 'VERIFIED' AND (voucher_1 IS NULL OR voucher_2 IS NULL);
+
+# Check rules agreement status (users who haven't agreed)
+SELECT discord_id, real_name FROM users WHERE rules_agreed_at IS NULL;
 ```
 
 ---

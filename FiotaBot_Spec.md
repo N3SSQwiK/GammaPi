@@ -11,8 +11,20 @@ FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its
 ## 2. Core Modules
 
 ### 2.1 Access Control Module (The Gatekeeper)
-*   **Trigger:** User joins the server -> Lands in `#welcome-gate`.
-*   **UI:** Embed with two buttons: `[🦁 Brother Verification]` and `[👔 Guest/Interest Access]`.
+
+#### Feature 0: Rules Agreement (Prerequisite)
+1.  **Trigger:** User joins the server -> Lands in `#rules-and-conduct`.
+2.  **UI:** Code of Conduct embed with sections: Respect & Dignity, Professionalism, Prohibited Behavior, Enforcement.
+3.  **Process:**
+    *   User clicks `[✅ I Agree to the Code of Conduct]` button.
+    *   Bot records `rules_agreed_at` timestamp in database.
+    *   Bot grants `✅ Rules Accepted` role.
+    *   User can now access `#welcome-gate`.
+4.  **Command:** `/rules` (Admin only) - Posts the Code of Conduct embed.
+
+#### Verification Gate
+*   **Trigger:** User with `✅ Rules Accepted` role -> Accesses `#welcome-gate`.
+*   **UI:** Embed with two buttons: `[🦁 Brother Verification]` and `[🌍 Guest Access]` with clear explanations of requirements and benefits for each path.
 
 #### Feature A: Dual-Voucher System (Brothers)
 1.  **Input:** Modal Form.
@@ -79,6 +91,7 @@ FiotaBot is the central operational bot for the Gamma Pi (Graduate) Chapter. Its
 | `is_mentor` | Integer | 1 (True) or 0 (False) |
 | `linked_in_id` | String | LinkedIn profile URL (optional) |
 | `vouched_by` | JSON String | Array of voucher Discord IDs |
+| `rules_agreed_at` | String | ISO timestamp of Code of Conduct agreement |
 
 ### 📋 Pending Schema Additions (See `openspec/changes/enhance-verification-ux`)
 

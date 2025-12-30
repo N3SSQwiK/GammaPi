@@ -150,15 +150,30 @@
 
 ## 🛡️ Phase 4: Operational Usage Guide
 
+### 4.0 How to Set Up Rules & Verification Channels
+1.  **Admin:** Go to `#rules-and-conduct` channel.
+2.  **Command:** Type `/rules`.
+3.  **Bot:** Posts the Code of Conduct embed with "I Agree" button.
+4.  **Admin:** Go to `#welcome-gate` channel.
+5.  **Command:** Type `/verify`.
+6.  **Bot:** Posts the verification gate with Brother/Guest options.
+7.  **Permissions:** Ensure `#welcome-gate` is only visible to users with `✅ Rules Accepted` role.
+
 ### 4.1 How to Verify a New Brother (Dual-Voucher)
-1.  **New Brother:** Joins Discord. Clicks "Verify" in `#welcome-gate`.
-2.  **New Brother:** Fills out form: "John Doe, Alpha Line, Voucher: Brother Smith".
-3.  **Bot:** Posts a ticket in `#pending-verifications`.
-4.  **Voucher 1 (Brother Smith):** Sees the ticket. Clicks **[Approve]**.
+1.  **New Brother:** Joins Discord. Lands in `#rules-and-conduct`.
+2.  **New Brother:** Reads Code of Conduct. Clicks **[✅ I Agree to the Code of Conduct]**.
+    *   *Bot Response:* "Thank you! You now have access to #welcome-gate."
+3.  **New Brother:** Goes to `#welcome-gate`. Clicks **[🦁 Brother Verification]**.
+4.  **New Brother:** Fills out form: "John Doe, Alpha Line, Voucher: Brother Smith".
+5.  **Bot:** Posts a ticket in `#pending-verifications`.
+6.  **Voucher 1 (Brother Smith):** Sees the ticket. Clicks **[Approve]**.
     *   *Bot Response:* "1/2 Approvals. Pending one more."
-5.  **Voucher 2 (E-Board Member):** Sees ticket. Checks "John Doe" on LinkedIn. Clicks **[Approve]**.
+7.  **Voucher 2 (E-Board Member):** Sees ticket. Checks "John Doe" on LinkedIn. Clicks **[Approve]**.
     *   *Bot Response:* "Verified! Access Granted."
-6.  **Result:** John Doe turns green (Brother Role) and sees the hidden channels.
+8.  **Result:** Brother receives appropriate role based on chapter:
+    *   **Gamma Pi Chapter:** `🦁 ΓΠ Brother` role
+    *   **Other Chapters (Active):** `🦁 Visiting Brother` role
+    *   **Other Chapters (Inactive/Alumni):** `🦁 Brother at Large` role
 
 ### 4.2 How to Take Attendance
 1.  **Secretary:** Goes to `#meeting-attendance`.
