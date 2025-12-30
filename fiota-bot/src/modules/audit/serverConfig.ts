@@ -17,7 +17,8 @@ export const EXPECTED_ROLES = [
     '🦁 Visiting Brother',
     '🦁 Brother at Large',
     '👔 Candidate',
-    '🌍 Guest'
+    '🌍 Guest',
+    '✅ Rules Accepted'
 ];
 
 export const FORBIDDEN_EVERYONE_PERMS = [
@@ -31,6 +32,7 @@ export const FORBIDDEN_EVERYONE_PERMS = [
 export const EXPECTED_CHANNELS: ExpectedChannel[] = [
     // Public
     { name: 'announcements', type: ChannelType.GuildText },
+    { name: 'rules-and-conduct', type: ChannelType.GuildText },
     { name: 'welcome-gate', type: ChannelType.GuildText },
     
     // Forums
