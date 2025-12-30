@@ -49,19 +49,29 @@ fiota-bot/
 │   ├── index.ts                 # Bot entry point
 │   ├── deploy-commands.ts       # Slash command registration
 │   ├── commands/                # Discord slash commands
+│   │   ├── rules.ts            # Post Code of Conduct embed
+│   │   ├── verify.ts           # Post verification gate
+│   │   └── ...                 # Other commands
 │   ├── modules/                 # Business logic modules
+│   │   ├── access/             # Rules agreement & verification
+│   │   │   ├── accessHandler.ts    # Verification flow
+│   │   │   └── rulesHandler.ts     # Code of Conduct agreement
 │   │   ├── audit/              # Server audit & Golden State
-│   │   ├── identity/           # Verification & onboarding
-│   │   ├── networking/         # Rolodex & search
-│   │   └── operations/         # Attendance, voting, etc.
+│   │   ├── identity/           # User profiles & geographic data (placeholder)
+│   │   ├── networking/         # Rolodex enhancements (placeholder)
+│   │   ├── operations/         # Attendance, voting, etc.
+│   │   └── pipeline/           # Candidate tracking (placeholder)
 │   └── lib/
 │       ├── db.ts               # Database connection
+│       ├── logger.ts           # Winston logging
+│       ├── scheduler.ts        # Cron jobs
 │       └── repositories/       # Data access layer
 ├── package.json
 └── tsconfig.json
 ```
 
 ### Key Features
+- **Rules Agreement**: Code of Conduct acceptance required before verification (`/rules` posts embed, `✅ Rules Accepted` role gates access)
 - **Dual-Voucher Verification**: Two-step member onboarding requiring approval from 2 active brothers
 - **Professional Rolodex**: Searchable database by industry, job title, location (`/find`)
 - **Pipeline Tracking**: Candidate and Interest status management (`/pipeline`)
@@ -79,8 +89,10 @@ npm start             # Start bot (production: pm2 start dist/index.js)
 ```
 
 ### Critical Files
-- `src/modules/audit/serverConfig.ts` - The "Golden State" configuration defining all required roles, channels, forum tags, and reactions
-- `src/lib/repositories/` - All database access MUST go through repository pattern (UserRepository, VoteRepository, AttendanceRepository)
+- `src/modules/audit/serverConfig.ts` - The "Golden State" configuration defining all required roles (including `✅ Rules Accepted`), channels (including `#rules-and-conduct`), forum tags, and reactions
+- `src/modules/access/rulesHandler.ts` - Code of Conduct embed and agreement logic
+- `src/modules/access/accessHandler.ts` - Brother/Guest verification flow with dual-voucher system
+- `src/lib/repositories/` - All database access MUST go through repository pattern (UserRepository, VoteRepository, AttendanceRepository, TicketRepository)
 - `src/deploy-commands.ts` - MUST run `npm run deploy` after any changes to slash command definitions
 
 ### Environment Variables
@@ -95,7 +107,8 @@ AUDIT_CHANNEL_ID=         # Channel for audit reports
 
 ### Database Schema
 SQLite database located at `data/fiota.db`:
-- `users` - Brother profiles with industry, location, verification status
+- `users` - Brother profiles with industry, location, verification status, `rules_agreed_at` timestamp
+- `verification_tickets` - Pending verification requests with dual-voucher tracking
 - `votes` - Voting records with issue tracking
 - `attendance` - Meeting attendance logs
 

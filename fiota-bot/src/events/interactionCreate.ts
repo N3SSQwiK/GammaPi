@@ -1,5 +1,6 @@
 import { Events, Interaction } from 'discord.js';
 import { handleAccessButton, handleAccessModal } from '../modules/access/accessHandler';
+import { handleRulesButton } from '../modules/access/rulesHandler';
 import logger from '../lib/logger';
 
 export default {
@@ -24,6 +25,11 @@ export default {
                 }
             }
         } else if (interaction.isButton()) {
+            // Handle Rules Agreement Button
+            if (interaction.customId === 'rules_agree') {
+                await handleRulesButton(interaction);
+                return;
+            }
             // Handle Access Buttons
             await handleAccessButton(interaction);
         } else if (interaction.isModalSubmit()) {

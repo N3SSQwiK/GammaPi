@@ -11,6 +11,7 @@ export interface UserRow {
     industry: string | null;
     job_title: string | null;
     is_mentor: number;
+    rules_agreed_at: string | null;
 }
 
 export const userRepository = {
@@ -19,7 +20,7 @@ export const userRepository = {
     },
 
     upsert(user: Partial<UserRow>): void {
-        const VALID_COLUMNS = ['discord_id', 'real_name', 'status', 'linked_in_id', 'vouched_by', 'zip_code', 'location_meta', 'industry', 'job_title', 'is_mentor'];
+        const VALID_COLUMNS = ['discord_id', 'real_name', 'status', 'linked_in_id', 'vouched_by', 'zip_code', 'location_meta', 'industry', 'job_title', 'is_mentor', 'rules_agreed_at'];
         const columns = Object.keys(user).filter(col => VALID_COLUMNS.includes(col));
         
         if (columns.length === 0) return;
@@ -56,5 +57,19 @@ export const userRepository = {
 
         const sql = `SELECT * FROM users WHERE ${conditions.join(' AND ')}`;
         return db.prepare(sql).all(...params) as UserRow[];
+    },
+
+    recordRulesAgreement(discordId: string): void {
+        const timestamp = new Date().toISOString();
+        db.prepare(`
+            INSERT INTO users (discord_id, rules_agreed_at)
+            VALUES (?, ?)
+            ON CONFLICT(discord_id) DO UPDATE SET rules_agreed_at = EXCLUDED.rules_agreed_at
+        `).run(discordId, timestamp);
+    },
+
+    hasAgreedToRules(discordId: string): boolean {
+        const user = this.getByDiscordId(discordId);
+        return user?.rules_agreed_at !== null && user?.rules_agreed_at !== undefined;
     }
 };

@@ -18,9 +18,17 @@ const initDb = () => {
             location_meta TEXT, -- JSON object {city, state, tz}
             industry TEXT,
             job_title TEXT,
-            is_mentor INTEGER DEFAULT 0 -- Boolean
+            is_mentor INTEGER DEFAULT 0, -- Boolean
+            rules_agreed_at TEXT -- ISO timestamp of rules agreement
         )
     `);
+
+    // Add rules_agreed_at column if it doesn't exist (migration for existing databases)
+    try {
+        db.exec(`ALTER TABLE users ADD COLUMN rules_agreed_at TEXT`);
+    } catch (e) {
+        // Column already exists, ignore
+    }
 
     // Attendance Table
     db.exec(`
