@@ -73,7 +73,7 @@ fiota-bot/
 ### Key Features
 - **Rules Agreement**: Code of Conduct acceptance required before verification (`/rules` posts embed, `✅ Rules Accepted` role gates access)
 - **Multi-Step Verification**: Enhanced onboarding via `/verify-start` command with autocomplete for chapter/industry selection, followed by two-modal flow for identity and voucher information
-- **Named Voucher System**: Verification requires naming 2 brothers who can vouch. Named vouchers get 48-hour priority to approve; after 48hrs, any brother can approve. E-Board can use `/verify-override` for immediate verification.
+- **Named Voucher System**: Verification requires naming 2 ΓΠ brothers who can vouch. Any ΓΠ brother can approve verification requests. E-Board can use `/verify-override` for immediate verification.
 - **Professional Rolodex**: Searchable database by industry, job title, location (`/find`)
 - **Pipeline Tracking**: Candidate and Interest status management (`/pipeline`)
 - **Server Audit**: Weekly automated validation of roles, channels, permissions (`/audit`)
@@ -106,6 +106,7 @@ npm start             # Start bot (production: pm2 start dist/index.js)
 - `/verify-override` - E-Board command to override a verification ticket immediately
 - `/chapter-assign` - E-Board command to assign a brother to a chapter (including hidden Omega)
 - `/profile-update` - User command to update profile info (don name, phone, job title, city)
+- `/bootstrap` - Server owner command to seed initial brothers on fresh install (proposed, see `openspec/changes/add-bootstrap-flow/`)
 
 ### Environment Variables
 Required in `.env`:
@@ -120,15 +121,15 @@ AUDIT_CHANNEL_ID=         # Channel for audit reports
 ### Database Schema
 SQLite database located at `data/fiota.db`:
 - `users` - Brother profiles including:
-  - Identity: `first_name`, `last_name`, `don_name` (don name = brother name)
+  - Identity: `first_name`, `last_name`, `don_name`, `real_name` (generated column: `first_name || ' ' || last_name`)
   - Chapter info: `chapter`, `initiation_year`, `initiation_semester`
   - Contact: `phone_number`, `city`, `state_province`, `country`
-  - Professional: `industry`, `job_title`, `zip_code`, `timezone`
-  - Status: `status` (PENDING, GUEST, BROTHER), `rules_agreed_at`
+  - Professional: `industry`, `job_title`, `zip_code`
+  - Status: `status` (GUEST or BROTHER), `rules_agreed_at`
 - `verification_tickets` - Pending verification requests with:
-  - Named vouchers: `named_voucher_1`, `named_voucher_2` (searched by name, not Discord handle)
-  - Approval tracking: `voucher_1_id`, `voucher_2_id`, `voucher_1_at`, `voucher_2_at`
-  - 48-hour fallback: after `created_at` + 48hrs, any brother can approve
+  - Named vouchers: `named_voucher_1`, `named_voucher_2` (Discord IDs, searched by name)
+  - Approval tracking: `voucher_1`, `voucher_2`, `voucher_1_at`, `voucher_2_at`
+  - Status: PENDING, PENDING_2 (1 approval), VERIFIED, EXPIRED, OVERRIDDEN
 - `votes` - Voting records with issue tracking
 - `attendance` - Meeting attendance logs
 
