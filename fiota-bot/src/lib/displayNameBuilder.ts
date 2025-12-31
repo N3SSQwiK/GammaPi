@@ -25,9 +25,11 @@ export function getDisplayName(user: UserRow, format: DisplayFormat = 'full'): s
     const firstName = user.first_name?.trim() || '';
     const lastName = user.last_name?.trim() || '';
     const donName = user.don_name?.trim() || '';
+    const realName = user.real_name?.trim() || '';  // Legacy fallback
 
     const hasLegalName = firstName && lastName;
     const hasDonName = donName.length > 0;
+    const hasRealName = realName.length > 0;
 
     switch (format) {
         case 'full':
@@ -37,6 +39,8 @@ export function getDisplayName(user: UserRow, format: DisplayFormat = 'full'): s
                 return `Don ${donName}`;
             } else if (hasLegalName) {
                 return `${firstName} ${lastName}`;
+            } else if (hasRealName) {
+                return realName;  // Legacy fallback
             }
             return 'Unknown Brother';
 
@@ -45,17 +49,20 @@ export function getDisplayName(user: UserRow, format: DisplayFormat = 'full'): s
                 return `Don ${donName}`;
             } else if (firstName) {
                 return firstName;
+            } else if (hasRealName) {
+                // Extract first name from legacy real_name
+                return realName.split(' ')[0];
             }
             return 'Unknown';
 
         case 'select':
             // For select menus: "Don Phoenix - Tech" or "John Smith - Finance"
-            const name = hasDonName ? `Don ${donName}` : hasLegalName ? `${firstName} ${lastName}` : 'Unknown';
+            const name = hasDonName ? `Don ${donName}` : hasLegalName ? `${firstName} ${lastName}` : hasRealName ? realName : 'Unknown';
             const industry = user.industry ? ` - ${truncateIndustry(user.industry)}` : '';
             return `${name}${industry}`;
 
         default:
-            return hasLegalName ? `${firstName} ${lastName}` : 'Unknown';
+            return hasLegalName ? `${firstName} ${lastName}` : hasRealName ? realName : 'Unknown';
     }
 }
 

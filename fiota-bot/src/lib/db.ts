@@ -20,10 +20,11 @@ const initDb = () => {
     db.exec(`
         CREATE TABLE IF NOT EXISTS users (
             discord_id TEXT PRIMARY KEY,
-            -- Name fields (replacing real_name)
+            -- Name fields
             first_name TEXT,
             last_name TEXT,
             don_name TEXT,
+            real_name TEXT,  -- Legacy field, kept for backward compatibility with pre-Phase2 records
             -- Status & verification
             status TEXT CHECK(status IN ('GUEST', 'BROTHER')) DEFAULT 'GUEST',
             rules_agreed_at TEXT,
