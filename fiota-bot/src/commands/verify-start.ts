@@ -66,6 +66,15 @@ export default {
             return;
         }
 
+        // Reject hidden chapters (e.g., Omega - reserved for E-Board assignment only)
+        if (chapter.hidden) {
+            await interaction.reply({
+                content: `The ${chapter.label} is not available for self-verification. Please contact E-Board if you believe this is an error.`,
+                ephemeral: true
+            });
+            return;
+        }
+
         // Validate industry
         if (!isValidIndustry(industryValue)) {
             await interaction.reply({

@@ -249,7 +249,8 @@ export async function handleAccessButton(interaction: Interaction) {
         }
         
         if (interaction.customId.startsWith('approve_ticket_')) {
-            const ticketId = interaction.customId.split('_')[2];
+            // Extract full ticket ID (format: approve_ticket_ticket_<userId>_<timestamp>)
+            const ticketId = interaction.customId.replace('approve_ticket_', '');
             const approver = interaction.user;
 
             // Check if approver has the ΓΠ Brother role (Discord role is source of truth)
