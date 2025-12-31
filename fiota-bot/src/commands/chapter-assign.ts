@@ -76,7 +76,7 @@ export default {
         }
 
         // Check if user is a brother
-        if (userRow.status !== 'BROTHER' && userRow.status !== 'OFFICER') {
+        if (userRow.status !== 'BROTHER') {
             await interaction.reply({
                 content: `User <@${targetUser.id}> is not a verified brother (status: ${userRow.status}).`,
                 ephemeral: true

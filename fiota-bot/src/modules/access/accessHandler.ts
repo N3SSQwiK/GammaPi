@@ -252,11 +252,18 @@ export async function handleAccessButton(interaction: Interaction) {
             const ticketId = interaction.customId.split('_')[2];
             const approver = interaction.user;
 
-            // Check if approver is a brother
-            const approverUser = userRepository.getByDiscordId(approver.id);
-            if (!approverUser || (approverUser.status !== 'BROTHER' && approverUser.status !== 'OFFICER')) {
+            // Check if approver has the ΓΠ Brother role (Discord role is source of truth)
+            const guild = interaction.guild;
+            if (!guild) {
+                await interaction.reply({ content: 'This command must be used in a server.', ephemeral: true });
+                return;
+            }
+
+            const member = await guild.members.fetch(approver.id);
+            const hasBrotherRole = member.roles.cache.some(r => r.name === '🦁 ΓΠ Brother');
+            if (!hasBrotherRole) {
                 await interaction.reply({
-                    content: 'Only verified brothers can approve verification requests.',
+                    content: 'Only verified ΓΠ brothers can approve verification requests.',
                     ephemeral: true
                 });
                 return;

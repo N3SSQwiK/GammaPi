@@ -9,7 +9,7 @@ export interface UserRow {
     don_name: string | null;
     real_name: string | null; // Legacy field - deprecated but kept for backward compatibility
     // Status & verification
-    status: 'GUEST' | 'BROTHER' | 'OFFICER';
+    status: 'GUEST' | 'BROTHER';
     rules_agreed_at: string | null;
     // Chapter & initiation
     chapter: string | null;
@@ -66,7 +66,7 @@ export const userRepository = {
         db.prepare(sql).run(...values);
     },
 
-    updateStatus(discordId: string, status: 'GUEST' | 'BROTHER' | 'OFFICER'): void {
+    updateStatus(discordId: string, status: 'GUEST' | 'BROTHER'): void {
         db.prepare('UPDATE users SET status = ? WHERE discord_id = ?').run(status, discordId);
     },
 
@@ -106,12 +106,14 @@ export const userRepository = {
             return [];
         }
 
-        // Get all brothers - include those with first/last name OR legacy real_name
+        // Get Gamma Pi brothers only - include those with first/last name OR legacy real_name
         // This ensures pre-Phase2 brothers (who only have real_name) are searchable
+        // Only Gamma Pi brothers can vouch since this is a Gamma Pi Discord server
         const brothers = db.prepare(`
             SELECT discord_id, first_name, last_name, don_name, real_name
             FROM users
             WHERE status = 'BROTHER'
+            AND chapter = 'gamma-pi'
             AND (
                 (first_name IS NOT NULL AND last_name IS NOT NULL)
                 OR real_name IS NOT NULL
@@ -173,14 +175,15 @@ export const userRepository = {
     },
 
     /**
-     * Get brother by Discord ID for voucher validation
+     * Get Gamma Pi brother by Discord ID for voucher validation
+     * Only Gamma Pi brothers can be vouchers since this is a Gamma Pi Discord server
      * Supports legacy records with only real_name
      */
     getBrotherForVoucher(discordId: string): VoucherSearchResult | null {
         const user = db.prepare(`
             SELECT discord_id, first_name, last_name, don_name, real_name
             FROM users
-            WHERE discord_id = ? AND status = 'BROTHER'
+            WHERE discord_id = ? AND status = 'BROTHER' AND chapter = 'gamma-pi'
         `).get(discordId) as {
             discord_id: string;
             first_name: string | null;
@@ -229,7 +232,7 @@ export const userRepository = {
     getAllBrothers(): UserRow[] {
         return db.prepare(`
             SELECT * FROM users
-            WHERE status IN ('BROTHER', 'OFFICER')
+            WHERE status = 'BROTHER'
             ORDER BY last_name, first_name
         `).all() as UserRow[];
     },

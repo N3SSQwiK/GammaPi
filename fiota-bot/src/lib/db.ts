@@ -25,7 +25,7 @@ const initDb = () => {
             last_name TEXT,
             don_name TEXT,
             -- Status & verification
-            status TEXT CHECK(status IN ('GUEST', 'BROTHER', 'OFFICER')) DEFAULT 'GUEST',
+            status TEXT CHECK(status IN ('GUEST', 'BROTHER')) DEFAULT 'GUEST',
             rules_agreed_at TEXT,
             -- Chapter & initiation
             chapter TEXT,
