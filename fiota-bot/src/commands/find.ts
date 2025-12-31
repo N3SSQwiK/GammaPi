@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { userRepository } from '../lib/repositories/userRepository';
+import { getDisplayName } from '../lib/displayNameBuilder';
 
 export default {
     data: new SlashCommandBuilder()
@@ -9,7 +10,7 @@ export default {
         .addStringOption(option => option.setName('city').setDescription('Filter by City').setRequired(false)),
     async execute(interaction: ChatInputCommandInteraction) {
         const industry = interaction.options.getString('industry');
-        
+
         if (!industry) {
             await interaction.reply({ content: 'Please provide an industry to search for.', ephemeral: true });
             return;
@@ -22,7 +23,7 @@ export default {
             return;
         }
 
-        const list = results.map(u => `• **${u.real_name}** - ${u.industry || 'N/A'} (${u.zip_code})`).join('\n');
+        const list = results.map(u => `• **${getDisplayName(u, 'full')}** - ${u.industry || 'N/A'} (${u.city || u.zip_code || 'N/A'})`).join('\n');
         await interaction.reply({ content: `**Found Brothers:**\n${list.substring(0, 1900)}`, ephemeral: true });
     },
 };

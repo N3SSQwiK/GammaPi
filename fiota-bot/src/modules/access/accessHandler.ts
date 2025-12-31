@@ -5,6 +5,17 @@ import { userRepository } from '../../lib/repositories/userRepository';
 import { ticketRepository } from '../../lib/repositories/ticketRepository';
 import logger from '../../lib/logger';
 
+// Helper to parse full name into first/last (temporary until Phase 2b replaces this)
+function parseFullName(fullName: string): { firstName: string; lastName: string } {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) {
+        return { firstName: parts[0], lastName: '' };
+    }
+    const lastName = parts.pop() || '';
+    const firstName = parts.join(' ');
+    return { firstName, lastName };
+}
+
 export async function handleAccessButton(interaction: Interaction) {
     if (!interaction.isButton()) return;
 
@@ -125,14 +136,20 @@ export async function handleAccessModal(interaction: Interaction) {
             const userId = interaction.user.id;
             const ticketId = `ticket_${userId}_${Date.now()}`;
 
+            // Parse full name into first/last (temporary until Phase 2b multi-step flow)
+            const { firstName, lastName } = parseFullName(realName);
+
             userRepository.upsert({
                 discord_id: userId,
-                real_name: realName,
+                first_name: firstName,
+                last_name: lastName,
                 zip_code: zip,
                 industry: industry
             });
 
-            ticketRepository.create(ticketId, userId);
+            // Legacy ticket creation - no named vouchers (any brother can approve)
+            // This will be replaced in Phase 2b with proper voucher selection
+            ticketRepository.create(ticketId, userId, '', '');
 
             const adminChannelId = config.VERIFICATION_CHANNEL_ID; 
             
