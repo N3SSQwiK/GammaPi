@@ -3,238 +3,172 @@
 ## ADDED Requirements
 
 ### Requirement: Chapter Constants Management
-The system SHALL maintain a hardcoded list of Phi Iota Alpha chapters with metadata for verification dropdown.
+The system SHALL maintain 80+ Phi Iota Alpha chapters in `src/lib/constants.ts`.
 
-#### Scenario: Define CHAPTERS constant
-- **WHEN** bot initializes or loads constants module
-- **THEN** CHAPTERS constant is loaded from `src/lib/constants.ts`
-- **AND** structure includes fields:
-  ```typescript
-  {
-    value: string,        // Kebab-case ID (e.g., "gamma-pi")
-    label: string,        // Display name (e.g., "Gamma Pi - Graduate Chapter")
-    type: string,         // "Undergraduate" | "Graduate" | "Alumni" | "Special"
-    location?: string,    // Optional location (e.g., "Troy, NY")
-    hidden: boolean       // If true, excluded from public dropdown
-  }
-  ```
+#### Implementation
+```typescript
+interface Chapter {
+  value: string;        // Kebab-case ID (e.g., "gamma-pi")
+  label: string;        // Display name (e.g., "Gamma Pi - Graduate Chapter")
+  institution?: string; // University name
+  state?: string;       // State/location
+  type: string;         // "Undergraduate" | "Graduate" | "Alumni" | "Special"
+  hidden: boolean;      // If true, excluded from public autocomplete
+}
+```
+
+#### Scenario: Autocomplete instead of select menu
+- **Note:** Discord limits select menus to 25 options. With 80+ chapters, we use autocomplete instead.
+- **WHEN** /verify-start command is used
+- **THEN** chapter option uses autocomplete via searchChapters(query)
+- **AND** returns top 25 matches
 
 #### Scenario: Filter visible chapters for verification
-- **WHEN** verification flow builds Chapter Selection menu
-- **THEN** filter CHAPTERS array to hidden=false only
-- **AND** sort alphabetically by Greek letter
-- **AND** map to Discord select menu options format:
-  ```typescript
-  {
-    label: CHAPTERS.label,
-    value: CHAPTERS.value,
-    description: CHAPTERS.location (optional)
-  }
-  ```
+- **WHEN** verification autocomplete is built
+- **THEN** use getVerificationChapters() which filters hidden=false
 
-#### Scenario: Include hidden chapters for E-Board commands
-- **WHEN** E-Board executes `/chapter-assign` command
+#### Scenario: Include hidden chapters for E-Board
+- **WHEN** /chapter-assign autocomplete is built
 - **THEN** include ALL chapters (hidden=true and hidden=false)
-- **AND** allow selection of Omega chapter
 
-#### Scenario: Validate chapter input
-- **WHEN** validateChapter(input) is called
-- **THEN** check if input matches any CHAPTERS.value (case-insensitive)
-- **AND** return true if match found, false otherwise
+#### Scenario: Omega chapter
+- Omega chapter has hidden=true
+- Only visible in /chapter-assign (E-Board only)
+- Used for deceased brothers (memorial designation)
 
 ### Requirement: Industry Constants Management
-The system SHALL maintain a standardized list of 50 NAICS-based industries for professional categorization.
+The system SHALL maintain 50 NAICS-based industries.
 
-#### Scenario: Define INDUSTRIES constant
-- **WHEN** bot initializes or loads constants module
-- **THEN** INDUSTRIES constant is loaded from `src/lib/constants.ts`
-- **AND** contains 50+ industry strings sorted alphabetically
-- **AND** includes "Other (please specify in notes)" as final option
-- **AND** based on NAICS taxonomy with professional naming
-
-#### Scenario: Build industry select menu
-- **WHEN** verification flow builds Industry Selection menu
-- **THEN** map INDUSTRIES array to Discord select menu options:
-  ```typescript
-  {
-    label: industry_string,
-    value: industry_string
-  }
-  ```
-- **AND** maintain alphabetical order
-- **AND** "Other" option appears last
-
-#### Scenario: Validate industry input
-- **WHEN** industry value is stored or queried
-- **THEN** verify value exists in INDUSTRIES array
-- **OR** allow "Other" with understanding manual categorization may follow
+#### Implementation
+- INDUSTRIES array contains 50 industry strings
+- Sorted alphabetically
+- "Other" as final option
+- searchIndustries(query) for autocomplete filtering
 
 ### Requirement: Validation Utilities Module
-The system SHALL provide reusable validation functions for verification form inputs.
+The system SHALL provide `src/lib/validation.ts`.
 
-#### Scenario: Validate year and semester input
-- **WHEN** validateYearSemester(input) is called with string input
-- **THEN** apply regex pattern `/^(19[3-9]\d|20[0-2]\d)\s+(Spring|Fall)$/i`
-- **IF** match successful:
-  - Extract year as integer (1931-2029)
-  - Extract semester as capitalized string ('Spring' or 'Fall')
-  - **THEN** return { year: number, semester: string }
-- **IF** no match:
-  - **THEN** return null
+#### Functions Implemented
+- **validateYearSemester(input)** → {year, semester} | null
+  - Regex: `/^(19[3-9]\d|20[0-2]\d)\s+(Spring|Fall)$/i`
+  - Year range: 1931-2029
+- **validatePhoneNumber(input)** → boolean
+  - Must be digits/spaces/()-.+ only
+  - Minimum 10 digits
+- **validateZipOrCity(input)** → {type: 'zip'|'city', value}
+  - 5 digits → zip
+  - Otherwise → city
+- **parseVoucherSearch(input)** → search terms
+- **calculateNameMatchScore(name, query)** → number
+  - Fuzzy matching for voucher name search
 
-**Test Cases:**
-- Input: "2010 Spring" → {year: 2010, semester: 'Spring'} ✅
-- Input: "1931 Fall" → {year: 1931, semester: 'Fall'} ✅
-- Input: "2030 Spring" → null ❌ (too far future)
-- Input: "2010" → null ❌ (missing semester)
-- Input: "2010 Winter" → null ❌ (invalid semester)
-
-#### Scenario: Validate phone number input
-- **WHEN** validatePhoneNumber(input) is called with string input
-- **THEN** apply character set regex `/^[\d\s\(\)\-\+\.]+$/`
-- **AND** strip non-digit characters and count digits
-- **IF** character set valid AND digit count >= 10:
-  - **THEN** return true
-- **ELSE** return false
-
-**Test Cases:**
-- Input: "(555) 123-4567" → true ✅ (10 digits)
-- Input: "+1-555-123-4567" → true ✅ (11 digits, international)
-- Input: "555-CALL-NOW" → false ❌ (contains letters)
-- Input: "123-4567" → false ❌ (only 7 digits)
-
-#### Scenario: Validate zip code or city input
-- **WHEN** validateZipOrCity(input) is called with string input
-- **IF** input matches `/^\d{5}$/` (exactly 5 digits):
-  - **THEN** return {type: 'zip', value: input}
-- **ELSE**:
-  - **THEN** return {type: 'city', value: input.trim()}
-
-**Test Cases:**
-- Input: "10001" → {type: 'zip', value: '10001'} ✅
-- Input: "Toronto" → {type: 'city', value: 'Toronto'} ✅
-- Input: "M5V 3A8" → {type: 'city', value: 'M5V 3A8'} ✅ (Canadian postal code)
-
-#### Scenario: Validate voucher @mentions
-- **WHEN** validateVoucherMentions(content, guildId) is called
-- **THEN** parse Discord mention format using regex `/<@(\d+)>/g`
-- **AND** extract all user IDs from mentions
-- **IF** exactly 2 user IDs found:
-  - Query users table for both IDs
-  - Verify both have status='BROTHER'
-  - Verify user IDs are different (not same person twice)
-  - **IF** all checks pass:
-    - **THEN** return [voucher1_id, voucher2_id]
-- **ELSE** return null
-
-**Test Cases:**
-- Input: "<@123456789> <@987654321>" (both brothers, different) → ['123456789', '987654321'] ✅
-- Input: "<@123456789>" (only 1 mention) → null ❌
-- Input: "<@123456789> <@123456789>" (duplicate) → null ❌
-- Input: "<@123456789> <@111111111>" (second is guest) → null ❌
+#### Scenario: Name-based voucher search (replaces @mentions)
+- **WHEN** user enters voucher name in Modal 2
+- **THEN** system searches brothers by don_name, first_name, last_name
+- **AND** uses fuzzy matching with scoring
+- **Note:** @mentions were replaced with name search for better UX
 
 ### Requirement: Display Name Utility Module
-The system SHALL provide centralized display name generation for consistent brother identity rendering.
+The system SHALL provide `src/lib/displayNameBuilder.ts`.
 
-#### Scenario: Build full display name with don name
-- **WHEN** getDisplayName(user, format='full') is called
-- **AND** user.don_name is not null and not empty string
-- **THEN** return string formatted as "Don {don_name} ({first_name} {last_name})"
-- **AND** handle null middle_name gracefully
+#### Functions Implemented
+- **getDisplayName(user, format)** → formatted name string
+  - format='full' with don_name: "Don {don_name} ({first_name} {last_name})"
+  - format='full' without don_name: "{first_name} {last_name}"
+  - format='short' with don_name: "Don {don_name}"
+  - format='short' without don_name: "{first_name}"
+- **getSelectMenuLabel(user)** → "Name • Industry" format
+- **formatChapterName(chapter)** → friendly chapter name
 
-**Examples:**
-- {don_name: 'Phoenix', first_name: 'John', last_name: 'Smith'} → "Don Phoenix (John Smith)"
-- {don_name: 'Nexus', first_name: 'Maria', middle_name: 'Elena', last_name: 'Garcia'} → "Don Nexus (Maria Garcia)"
+### Requirement: Autocomplete Helpers
+The system SHALL provide autocomplete search functions in constants.ts.
 
-#### Scenario: Build full display name without don name
-- **WHEN** getDisplayName(user, format='full') is called
-- **AND** user.don_name is null or empty string
-- **THEN** return string formatted as "{first_name} {last_name}"
+#### Functions Implemented
+- **searchChapters(query)** → filtered chapters (max 25)
+- **searchIndustries(query)** → filtered industries (max 25)
+- **getVerificationChapters()** → chapters where hidden=false
+- **isValidChapter(value)** → boolean
+- **isValidIndustry(value)** → boolean
 
-**Example:**
-- {don_name: null, first_name: 'Robert', last_name: 'Johnson'} → "Robert Johnson"
+### Requirement: New Slash Commands
 
-#### Scenario: Build short display name
-- **WHEN** getDisplayName(user, format='short') is called
-- **IF** user.don_name exists:
-  - **THEN** return "Don {don_name}"
-- **ELSE**:
-  - **THEN** return "{first_name}"
+#### /verify-start
+- **Description:** Start brother verification process
+- **Options:**
+  - chapter (string, required, autocomplete)
+  - industry (string, required, autocomplete)
+- **Flow:** Validate → Modal 1 → Button → Modal 2 → Create ticket
+- **Note:** Uses two modals because Discord doesn't allow chaining modals
 
-**Examples:**
-- {don_name: 'Phoenix'} → "Don Phoenix"
-- {don_name: null, first_name: 'Robert'} → "Robert"
+#### /verify-override
+- **Description:** E-Board: Override a verification ticket
+- **Permission:** Administrator (DefaultMemberPermissions.Administrator)
+- **Options:**
+  - ticket_id (string, required)
+- **Action:** Immediately verify without voucher approvals
 
-#### Scenario: Build select menu label
-- **WHEN** getSelectMenuLabel(user) is called for Discord dropdown
-- **THEN** combine display name with industry context
-- **AND** format as "{display_name} • {industry}"
-- **AND** truncate if exceeds 100 characters (Discord limit)
+#### /chapter-assign
+- **Description:** E-Board: Assign chapter to brother
+- **Permission:** Administrator
+- **Options:**
+  - user (User, required)
+  - chapter (string, required, autocomplete with ALL chapters)
+- **Action:** Update user.chapter in database
 
-**Examples:**
-- "Don Phoenix • Technology / Software"
-- "Robert Johnson • Finance / Banking / Investment"
+#### /profile-update
+- **Description:** Update your profile information
+- **Action:** Show modal with current values for don_name, phone_number, job_title, city
+- **Restriction:** Only works for users already in database
 
-#### Scenario: Fallback for incomplete profile
-- **WHEN** getDisplayName() is called with user missing name components
-- **THEN** fall back to real_name field if available
-- **OR** fall back to Discord username if real_name also missing
-- **AND** log warning for incomplete profile
+### Requirement: Modal Handlers
+The system SHALL handle verification modals in accessHandler.ts.
 
-### Requirement: Chapter Assignment Command (E-Board Only)
-The system SHALL provide E-Board command to manually assign or reassign brother chapters including Omega.
+#### Modal IDs
+- **verify_modal_1** → Identity fields (first step)
+- **verify_modal_2** → Contact and voucher fields (second step)
+- **profile_update_modal** → Profile update fields
 
-#### Scenario: Execute chapter assignment command
-- **WHEN** E-Board member executes `/chapter-assign user:@Brother chapter:Gamma_Pi`
-- **THEN** verify executor has E-Board role
-- **AND** verify target user exists and has status='BROTHER'
-- **AND** update user.chapter to selected value
-- **AND** log action: "{admin_id} assigned {user_id} to {chapter} at {timestamp}"
-- **AND** reply: "✅ <@{user_id}> chapter updated to {chapter}"
+#### Button IDs
+- **verify_continue_{ticketId}** → Shows Modal 2 after Modal 1
 
-#### Scenario: E-Board assigns Omega chapter
-- **WHEN** E-Board executes `/chapter-assign user:@Brother chapter:Omega`
-- **THEN** Omega appears in chapter dropdown for this command
-- **AND** update proceeds normally (Omega is valid chapter value)
-- **AND** user profile now shows chapter='Omega'
+#### Why Two Modals?
+Discord API limitation: Cannot call showModal() from a ModalSubmitInteraction.
+Solution: Modal 1 → Reply with button → Button click → Modal 2
 
-#### Scenario: Non-E-Board attempts chapter assignment
-- **WHEN** regular brother executes `/chapter-assign`
-- **THEN** command fails with error: "This command requires E-Board role"
-- **AND** no changes to user profile
+### Requirement: Pending Verifications State
+The system SHALL maintain in-memory state for multi-step verification.
 
-### Requirement: Constants Update Documentation
-The system SHALL document the process for maintaining CHAPTERS and INDUSTRIES constants.
+#### Implementation
+```typescript
+const pendingVerifications = new Map<string, {
+  chapter: string;
+  industry: string;
+  firstName: string;
+  lastName: string;
+  donName: string;
+  yearSemester: string;
+  jobTitle: string;
+}>();
+```
+- Key: Discord user ID
+- Cleared after Modal 2 submission or timeout
 
-#### Scenario: Quarterly chapter list review
-- **WHEN** Tech Chair performs quarterly maintenance (Jan, Apr, Jul, Oct)
-- **THEN** visit phiota.org/chapters website
-- **AND** compare website chapter list to CHAPTERS constant in code
-- **IF** new chapter colonized:
-  - Add to CHAPTERS array with appropriate metadata
-  - Submit git PR with comment: "Add {chapter_name} colonized {date}"
-- **IF** chapter becomes inactive:
-  - Add `inactive: true` flag (keep for historical data)
-  - Do NOT remove from array (preserves existing brother records)
+### Requirement: Constants Maintenance Documentation
+The system SHALL document quarterly maintenance process.
 
-#### Scenario: Industry taxonomy expansion request
-- **WHEN** E-Board identifies >3 brothers categorized as "Other" in same field
-- **THEN** review original industry descriptions
-- **AND** propose new industry category if pattern emerges
-- **AND** add to INDUSTRIES constant via git PR
-- **AND** notify affected brothers to re-categorize
+#### Chapter List Review (Quarterly)
+- **Schedule:** First week of Jan, Apr, Jul, Oct
+- **Process:**
+  1. Visit phiota.org/chapters
+  2. Compare with CHAPTERS constant
+  3. Add new chapters with hidden=false
+  4. Mark inactive chapters (don't delete)
+  5. Deploy changes
 
-#### Scenario: Industry migration mapping
-- **WHEN** new standardized industry list is deployed
-- **THEN** create INDUSTRY_MIGRATION_MAP in migration script
-- **AND** map common free-text variations to new standardized values
-- **Example:**
-  ```typescript
-  {
-    'Tech / Software Engineer': 'Technology / Software',
-    'Software': 'Technology / Software',
-    'SWE': 'Technology / Software',
-    'Finance': 'Finance / Banking / Investment',
-    'Law': 'Legal / Law'
-  }
-  ```
+#### Industry Expansion
+- **Trigger:** >3 brothers select "Other" for same field
+- **Process:**
+  1. Query database for "Other" selections
+  2. Identify patterns
+  3. Add new industry to INDUSTRIES
+  4. Deploy changes

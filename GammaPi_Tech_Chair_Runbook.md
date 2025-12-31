@@ -52,7 +52,8 @@ If the bot isn't responding:
 
 ## 3. Database Management (CRITICAL)
 FiotaBot uses **SQLite** (`fiota.db`). This file contains:
-*   **Verification History:** Who vouched for whom.
+*   **User Profiles:** Brother information including name, chapter, industry, phone, etc.
+*   **Verification Tickets:** Pending and completed verifications with voucher tracking.
 *   **Attendance:** Member meeting records.
 *   **Active Votes:** Current poll data (Voting now survives restarts).
 
@@ -97,10 +98,7 @@ To check the database without the bot:
 ## 6. Data Maintenance (Quarterly)
 
 ### 🏛️ Chapter List Updates
-> **Note:** The `CHAPTERS` constant will be added in the `enhance-verification-ux` proposal. Until then, chapter information is collected as free text during verification.
-
-**Future Process (after enhance-verification-ux is implemented):**
-The chapter list (`CHAPTERS` constant in `src/lib/constants.ts`) should be reviewed quarterly:
+The chapter list (`CHAPTERS` constant in `src/lib/constants.ts`) should be reviewed quarterly.
 
 **Schedule:** First week of January, April, July, October
 
@@ -109,16 +107,23 @@ The chapter list (`CHAPTERS` constant in `src/lib/constants.ts`) should be revie
 2.  **Compare:** Cross-reference website list with `CHAPTERS` constant in codebase
 3.  **Add New Chapters:**
     *   New colonizations → Add with `hidden: false`
-    *   Format: `{ value: 'greek-letters', label: 'Full Name Chapter', institution: 'University', state: 'State', type: 'Undergraduate', hidden: false }`
+    *   Format:
+    ```typescript
+    {
+      value: 'greek-letters',
+      label: 'Full Name Chapter',
+      institution: 'University Name',
+      state: 'State',
+      type: 'Undergraduate',  // or 'Graduate', 'Alumni'
+      hidden: false
+    }
+    ```
 4.  **Mark Inactive:** If chapter closes → Add `inactive: true` (don't delete - preserves historical data)
-5.  **Deploy:** Submit PR, rebuild bot, restart PM2
+5.  **Deploy:** Submit PR, rebuild bot, run `npm run deploy`, restart PM2
 6.  **Special:** Omega chapter is always `hidden: true` (deceased brothers only, E-Board assignment via `/chapter-assign`)
 
 ### 💼 Industry List Maintenance
-> **Note:** The `INDUSTRIES` constant will be added in the `enhance-verification-ux` proposal. Until then, industry is collected as free text during verification.
-
-**Future Process (after enhance-verification-ux is implemented):**
-The industry list (`INDUSTRIES` constant) is based on NAICS taxonomy:
+The industry list (`INDUSTRIES` constant in `src/lib/constants.ts`) is based on NAICS taxonomy.
 
 **When to Add Industries:**
 *   E-Board reports >3 brothers selected "Other" for same industry
@@ -128,8 +133,7 @@ The industry list (`INDUSTRIES` constant) is based on NAICS taxonomy:
 1.  Query database: `SELECT industry FROM users WHERE industry LIKE '%Other%';`
 2.  Identify patterns (e.g., multiple "Blockchain" entries)
 3.  Add new industry to `INDUSTRIES` array in alphabetical order
-4.  Update `INDUSTRY_MIGRATION_MAP` to auto-categorize future similar entries
-5.  Deploy changes
+4.  Deploy changes: `npm run build && npm run deploy && pm2 restart FiotaBot`
 
 ### 📊 Data Quality Checks
 Monthly database hygiene:
@@ -141,18 +145,36 @@ sqlite3 /root/fiota.db
 SELECT industry, COUNT(*) FROM users GROUP BY industry ORDER BY COUNT(*) DESC;
 
 # Find incomplete profiles (missing key fields)
-SELECT discord_id, real_name FROM users WHERE industry IS NULL OR zip_code IS NULL;
+SELECT discord_id, first_name, last_name FROM users WHERE industry IS NULL OR city IS NULL;
 
 # Verify all brothers have vouchers recorded
-SELECT user_id FROM verification_tickets WHERE status = 'VERIFIED' AND (voucher_1 IS NULL OR voucher_2 IS NULL);
+SELECT user_id FROM verification_tickets WHERE status = 'VERIFIED' AND (voucher_1_id IS NULL AND voucher_2_id IS NULL);
 
 # Check rules agreement status (users who haven't agreed)
-SELECT discord_id, real_name FROM users WHERE rules_agreed_at IS NULL;
+SELECT discord_id, first_name, last_name FROM users WHERE rules_agreed_at IS NULL AND status = 'BROTHER';
 ```
 
 ---
 
-## 7. Security Protocols
+## 7. Verification Management
+
+### 📋 Verification Ticket Commands
+- `/verify` - Post verification gate in channel (admin)
+- `/verify-start` - User starts verification (autocomplete for chapter/industry)
+- `/verify-override ticket_id:ABC123` - E-Board immediate approval
+- `/chapter-assign user:@Brother chapter:Omega` - Assign chapter (including hidden Omega)
+
+### ⏱️ 48-Hour Fallback
+Named vouchers get 48-hour priority to approve tickets. After 48 hours, any brother can approve.
+E-Board can use `/verify-override` for immediate verification at any time.
+
+### 👤 Profile Management
+Brothers can update their own profiles:
+- `/profile-update` - Opens modal to update don name, phone, job title, city
+
+---
+
+## 8. Security Protocols
 *   **New Tech Chair Transition:**
     1.  Rotate the **Discord Bot Token** in Developer Portal.
     2.  Rotate **Hostinger SSH Keys/Password**.
@@ -160,7 +182,23 @@ SELECT discord_id, real_name FROM users WHERE rules_agreed_at IS NULL;
     4.  Restart Bot.
 *   **Spam Attack:**
     1.  Bot is getting spammed with fake verifications?
-    2.  Temporarily disable the `/verify` command permissions in Discord Server Settings > Integrations.
+    2.  Temporarily disable the `/verify-start` command permissions in Discord Server Settings > Integrations.
+
+---
+
+## 9. Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `src/lib/constants.ts` | CHAPTERS (80+) and INDUSTRIES (50) constants |
+| `src/lib/validation.ts` | Input validation utilities |
+| `src/lib/displayNameBuilder.ts` | Don name display formatting |
+| `src/modules/access/accessHandler.ts` | Verification flow logic |
+| `src/modules/audit/serverConfig.ts` | Golden State configuration |
+| `src/commands/verify-start.ts` | Multi-step verification command |
+| `src/commands/verify-override.ts` | E-Board override command |
+| `src/commands/chapter-assign.ts` | E-Board chapter assignment |
+| `src/commands/profile-update.ts` | User profile updates |
 
 ---
 **Maintained by Gamma Pi Tech Chair**

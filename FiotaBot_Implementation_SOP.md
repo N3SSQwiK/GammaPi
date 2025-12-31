@@ -1,6 +1,6 @@
 # FiotaBot & Discord Migration: Standard Operating Procedure (SOP) & Implementation Guide
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Target Audience:** Chapter Administrators / Tech Chair (Beginner Level)
 **Prerequisites:** Admin access to Hostinger (VPS), Discord, and a Web Browser.
 
@@ -156,33 +156,50 @@
 3.  **Bot:** Posts the Code of Conduct embed with "I Agree" button.
 4.  **Admin:** Go to `#welcome-gate` channel.
 5.  **Command:** Type `/verify`.
-6.  **Bot:** Posts the verification gate with Brother/Guest options.
+6.  **Bot:** Posts the verification gate explaining the `/verify-start` flow.
 7.  **Permissions:** Ensure `#welcome-gate` is only visible to users with `✅ Rules Accepted` role.
 
-### 4.1 How to Verify a New Brother (Dual-Voucher)
+### 4.1 How to Verify a New Brother (Multi-Step Flow)
 1.  **New Brother:** Joins Discord. Lands in `#rules-and-conduct`.
 2.  **New Brother:** Reads Code of Conduct. Clicks **[✅ I Agree to the Code of Conduct]**.
     *   *Bot Response:* "Thank you! You now have access to #welcome-gate."
-3.  **New Brother:** Goes to `#welcome-gate`. Clicks **[🦁 Brother Verification]**.
-4.  **New Brother:** Fills out form: "John Doe, Alpha Line, Voucher: Brother Smith".
-5.  **Bot:** Posts a ticket in `#pending-verifications`.
-6.  **Voucher 1 (Brother Smith):** Sees the ticket. Clicks **[Approve]**.
+3.  **New Brother:** Goes to `#welcome-gate`. Runs `/verify-start`.
+    *   Selects **Chapter** from autocomplete (80+ options)
+    *   Selects **Industry** from autocomplete (50 options)
+4.  **Step 1 Modal:** Fills out identity info:
+    *   First Name, Last Name, Don Name (optional)
+    *   Year & Semester (e.g., "2015 Spring")
+    *   Job Title
+5.  **New Brother:** Clicks "Continue to Step 2" button.
+6.  **Step 2 Modal:** Fills out contact and voucher info:
+    *   Phone Number, City
+    *   Voucher 1 Name (e.g., "Don Phoenix" or "John Smith")
+    *   Voucher 2 Name
+7.  **Bot:** Posts verification ticket in `#pending-verifications`.
+8.  **Voucher 1:** Sees the ticket. Clicks **[Approve]**.
     *   *Bot Response:* "1/2 Approvals. Pending one more."
-7.  **Voucher 2 (E-Board Member):** Sees ticket. Checks "John Doe" on LinkedIn. Clicks **[Approve]**.
+9.  **Voucher 2:** Clicks **[Approve]**.
     *   *Bot Response:* "Verified! Access Granted."
-8.  **Result:** Brother receives appropriate role based on chapter:
-    *   **Gamma Pi Chapter:** `🦁 ΓΠ Brother` role
-    *   **Other Chapters (Active):** `🦁 Visiting Brother` role
-    *   **Other Chapters (Inactive/Alumni):** `🦁 Brother at Large` role
+10. **Result:** Brother receives 🦁 ΓΠ Brother role.
 
-### 4.2 How to Take Attendance
+### 4.2 E-Board Override (Immediate Verification)
+If vouchers are unavailable or verification is stuck:
+1.  **E-Board:** Run `/verify-override ticket_id:ABC123`
+2.  **Bot:** Immediately verifies the user without waiting for approvals.
+
+### 4.3 Assigning Special Chapters (Including Omega)
+For deceased brothers or special assignments:
+1.  **E-Board:** Run `/chapter-assign user:@Brother chapter:Omega`
+2.  **Bot:** Updates the brother's chapter. Omega is hidden from public verification.
+
+### 4.4 How to Take Attendance
 1.  **Secretary:** Goes to `#meeting-attendance`.
 2.  **Command:** Types `/attendance duration:15`.
 3.  **Bot:** Posts a green button "Check In".
 4.  **Brothers:** Click the button. Bot replies "Checked In!".
 5.  **Secretary:** After 15 mins, bot posts "Attendance Closed" (and saves list to database).
 
-### 4.4 How to Run a Security Audit
+### 4.5 How to Run a Security Audit
 1.  **Tech Chair:** Wants to ensure no permissions are broken.
 2.  **Command:** `/audit`.
 3.  **Bot:** Scans all roles and channels.
@@ -193,6 +210,23 @@
 
 ---
 
+## 📋 Command Reference
+
+| Command | Permission | Description |
+|---------|------------|-------------|
+| `/rules` | Admin | Post Code of Conduct embed |
+| `/verify` | Admin | Post verification gate embed |
+| `/verify-start` | Everyone | Start multi-step verification |
+| `/verify-override` | Admin | Override a pending ticket |
+| `/chapter-assign` | Admin | Assign chapter to brother |
+| `/profile-update` | Everyone | Update your profile |
+| `/find` | Everyone | Search brother directory |
+| `/attendance` | Admin | Start attendance check-in |
+| `/audit` | Admin | Run server security audit |
+| `/setup` | Admin | Enforce Golden State config |
+
+---
+
 ## 🆘 Troubleshooting
 
 *   **Bot is Offline:**
@@ -200,8 +234,12 @@
     *   If stopped, run `pm2 restart FiotaBot`.
     *   Check logs: `pm2 logs FiotaBot`.
 *   **Commands not showing up:**
+    *   Run `npm run deploy` to re-register commands.
     *   Sometimes Discord takes an hour to refresh commands.
     *   Kick the bot and re-invite it using the link from Step 1.6.
+*   **Autocomplete not working:**
+    *   Ensure you've run `npm run deploy` after any command changes.
+    *   Check that the bot has proper permissions in the channel.
 
 ---
 **End of Guide**

@@ -9,15 +9,40 @@ This guide will teach you how to use **FiotaBot**, our custom AI assistant, and 
 
 ## 🔑 Phase 1: Access & Verification
 
-### 1. The Welcome Gate
-When you first join, you will see almost nothing. This is security by design.
-1.  Go to the **#welcome-gate** channel.
-2.  Click the red **[Brother Verification]** button.
-3.  Fill out the form:
-    *   **Voucher:** Name an *Active* ΓΠ Brother who can verify you.
-    *   **Zip Code:** Used to show your Time Zone/City on your profile.
-    *   **Industry/Title:** Critical for the "Rolodex" (see below).
-4.  **Wait:** Two brothers must vote to approve you. Once approved, the server will unlock.
+### 1. Rules Agreement
+When you first join, you will see the **#rules-and-conduct** channel.
+1.  Read the **Code of Conduct** carefully.
+2.  Click **[✅ I Agree to the Code of Conduct]** button.
+3.  You now have access to **#welcome-gate** for verification.
+
+### 2. Brother Verification (Multi-Step Flow)
+After agreeing to the rules, complete your verification:
+
+1.  **Start Verification:** Run the `/verify-start` command.
+    *   Select your **Chapter** (type to search 80+ chapters)
+    *   Select your **Industry** (type to search 50 categories)
+
+2.  **Step 1 - Identity:** A modal appears asking for:
+    *   **First Name** and **Last Name** (required)
+    *   **Don Name** (optional - your brother name, e.g., "Phoenix")
+    *   **Year & Semester** (e.g., "2015 Spring")
+    *   **Job Title**
+
+3.  **Step 2 - Contact & Vouchers:** Click "Continue to Step 2" button, then fill:
+    *   **Phone Number** (for brother networking)
+    *   **City** (your current location)
+    *   **Voucher 1 Name** (name a brother who can vouch for you)
+    *   **Voucher 2 Name** (name a second brother)
+
+4.  **Wait for Approval:** Two brothers must approve your ticket.
+    *   Named vouchers are notified first
+    *   After 48 hours, any brother can approve
+    *   Once approved, the server unlocks!
+
+### 3. Updating Your Profile
+Already verified? Update your information anytime:
+*   **Command:** `/profile-update`
+*   You can update: Don Name, Phone, Job Title, City
 
 ---
 
@@ -27,9 +52,11 @@ Stop shouting "Does anyone know someone in Finance?" into the void. Use the data
 ### 🔎 Find a Brother
 *   **Command:** `/find`
 *   **Usage:** Type `/find` and hit Tab. You can filter by:
-    *   `industry`: e.g., "Tech", "Law", "Finance".
+    *   `industry`: e.g., "Technology / Software", "Finance / Banking".
     *   `city`: e.g., "New York", "Chicago".
-*   **Example:** `/find industry:Marketing` -> *Returns a list of brothers in Marketing.*
+*   **Example:** `/find industry:Marketing` -> *Returns brothers in Marketing.*
+
+**Note:** Brothers with Don Names appear as "Don Phoenix" in search results.
 
 ### 🧠 Mentorship (Office Hours)
 Willing to chat with younger brothers or candidates? Toggle your status.
@@ -74,6 +101,18 @@ Don't wait for a paper sheet.
 3.  **Notifications:**
     *   We rarely use `@everyone`. If you get pinged, it's important.
     *   Please check the **#weekly-digest** email on Fridays for summaries.
+
+---
+
+## 📋 Quick Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `/verify-start` | Start brother verification (new members) |
+| `/profile-update` | Update your profile (don name, phone, etc.) |
+| `/find` | Search the brother directory |
+| `/mentor status:On/Off` | Toggle mentorship availability |
+| `/attendance` | Check in to a meeting |
 
 ---
 *Semper Parati, Semper Juncti.*
