@@ -9,64 +9,19 @@ import { getChapterByValue } from '../../lib/constants';
 import { getDisplayName, formatChapterName } from '../../lib/displayNameBuilder';
 import { pendingVerifyStarts, pendingVerifications } from '../../lib/verificationState';
 
-// Helper to parse full name into first/last (temporary for legacy modal)
-function parseFullName(fullName: string): { firstName: string; lastName: string } {
-    const parts = fullName.trim().split(/\s+/);
-    if (parts.length === 1) {
-        return { firstName: parts[0], lastName: '' };
-    }
-    const lastName = parts.pop() || '';
-    const firstName = parts.join(' ');
-    return { firstName, lastName };
-}
-
 export async function handleAccessButton(interaction: Interaction) {
     if (!interaction.isButton()) return;
 
     try {
+        // Legacy button - redirect to /verify-start
         if (interaction.customId === 'verify_brother_start') {
-            const modal = new ModalBuilder()
-                .setCustomId('verify_brother_modal')
-                .setTitle('Brother Verification');
+            await interaction.reply({
+                content: 'Please use the `/verify-start` command to begin verification.',
+                ephemeral: true
+            });
+            return;
+        }
 
-            const nameInput = new TextInputBuilder()
-                .setCustomId('real_name')
-                .setLabel("Full Legal Name")
-                .setStyle(TextInputStyle.Short);
-
-            const chapterInput = new TextInputBuilder()
-                .setCustomId('chapter_init')
-                .setLabel("Chapter & Year (e.g. Gamma Pi, 2010)")
-                .setStyle(TextInputStyle.Short);
-
-            const voucherInput = new TextInputBuilder()
-                .setCustomId('voucher_name')
-                .setLabel("Voucher Name (ΓΠ Brother)")
-                .setStyle(TextInputStyle.Short);
-
-            const zipInput = new TextInputBuilder()
-                .setCustomId('zip_code')
-                .setLabel("Zip Code")
-                .setStyle(TextInputStyle.Short)
-                .setMaxLength(5);
-            
-            const industryInput = new TextInputBuilder()
-                 .setCustomId('industry')
-                 .setLabel("Industry & Title")
-                 .setStyle(TextInputStyle.Short)
-                 .setPlaceholder("Tech / Software Engineer");
-
-            modal.addComponents(
-                new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput),
-                new ActionRowBuilder<TextInputBuilder>().addComponents(chapterInput),
-                new ActionRowBuilder<TextInputBuilder>().addComponents(voucherInput),
-                new ActionRowBuilder<TextInputBuilder>().addComponents(zipInput),
-                new ActionRowBuilder<TextInputBuilder>().addComponents(industryInput)
-            );
-
-            await interaction.showModal(modal);
-        } 
-        
         if (interaction.customId === 'verify_guest_start') {
             await interaction.reply({ content: 'LinkedIn Verification Link: [Click Here](https://linkedin.com) (Stub)', ephemeral: true });
         }
@@ -198,7 +153,7 @@ export async function handleAccessButton(interaction: Interaction) {
             // Check if approver was a named voucher
             const wasNamedVoucher = currentTicket.named_voucher_1 === approver.id ||
                                     currentTicket.named_voucher_2 === approver.id;
-            const approvalType = wasNamedVoucher ? 'Named voucher' : 'Brother (48hr fallback)';
+            const approvalType = wasNamedVoucher ? 'Named voucher' : 'Brother';
 
             if (result.status === '1/2') {
                 await interaction.reply({
@@ -236,61 +191,13 @@ export async function handleAccessButton(interaction: Interaction) {
 export async function handleAccessModal(interaction: Interaction) {
     if (!interaction.isModalSubmit()) return;
 
-    try {
-        if (interaction.customId === 'verify_brother_modal') {
-            const realName = interaction.fields.getTextInputValue('real_name');
-            const chapter = interaction.fields.getTextInputValue('chapter_init');
-            const voucher = interaction.fields.getTextInputValue('voucher_name');
-            const zip = interaction.fields.getTextInputValue('zip_code');
-            const industry = interaction.fields.getTextInputValue('industry');
-
-            const userId = interaction.user.id;
-            const ticketId = `ticket_${userId}_${Date.now()}`;
-
-            // Parse full name into first/last (temporary until Phase 2b multi-step flow)
-            const { firstName, lastName } = parseFullName(realName);
-
-            userRepository.upsert({
-                discord_id: userId,
-                first_name: firstName,
-                last_name: lastName,
-                zip_code: zip,
-                industry: industry
-            });
-
-            // Legacy ticket creation - no named vouchers (any brother can approve)
-            // This will be replaced in Phase 2b with proper voucher selection
-            ticketRepository.create(ticketId, userId, '', '');
-
-            const adminChannelId = config.VERIFICATION_CHANNEL_ID; 
-            
-            await interaction.reply({ content: `Application Submitted! Ticket ID: ${ticketId}. Please wait for 2 brothers to verify you.`, ephemeral: true });
-            
-            if (interaction.guild && adminChannelId) {
-                const channel = interaction.guild.channels.cache.get(adminChannelId) as TextChannel;
-                if (channel) {
-                    const embed = new EmbedBuilder()
-                        .setTitle('New Verification Request')
-                        .setColor('#B41528')
-                        .addFields(
-                            { name: 'User', value: `<@${userId}>` },
-                            { name: 'Name', value: realName },
-                            { name: 'Chapter', value: chapter },
-                            { name: 'Voucher', value: voucher }
-                        );
-                    const row = new ActionRowBuilder<ButtonBuilder>()
-                        .addComponents(new ButtonBuilder().setCustomId(`approve_ticket_${ticketId}`).setLabel('Approve').setStyle(ButtonStyle.Success));
-                    await channel.send({ embeds: [embed], components: [row] });
-                } else {
-                    logger.error(`[Access] Could not find Verification Channel: ${adminChannelId}`);
-                }
-            }
-        }
-    } catch (error) {
-        logger.error('[Access] Modal error:', error);
-        if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'An error occurred while processing your request.', ephemeral: true });
-        }
+    // Legacy modal handler removed - all verification now uses /verify-start flow
+    // This function is kept for backward compatibility in case old embeds still exist
+    if (interaction.customId === 'verify_brother_modal') {
+        await interaction.reply({
+            content: 'This verification method has been replaced. Please use the `/verify-start` command instead.',
+            ephemeral: true
+        });
     }
 }
 
@@ -537,7 +444,7 @@ async function handleModal2(interaction: ModalSubmitInteraction) {
 
     // Reply to user
     await interaction.reply({
-        content: `**Application Submitted!**\n\nTicket ID: \`${ticketId}\`\n\nYour vouchers:\n• ${voucher1?.display_name || voucher1Name}\n• ${voucher2?.display_name || voucher2Name}\n\nThey will be notified to approve your verification. After 48 hours, any brother can approve.`,
+        content: `**Application Submitted!**\n\nTicket ID: \`${ticketId}\`\n\nYour vouchers:\n• ${voucher1?.display_name || voucher1Name}\n• ${voucher2?.display_name || voucher2Name}\n\nThey will be notified to approve your verification. Any ΓΠ brother can approve your request.`,
         ephemeral: true
     });
 
@@ -568,7 +475,7 @@ async function handleModal2(interaction: ModalSubmitInteraction) {
                     { name: '\u200B', value: '\u200B', inline: true },
                     { name: 'Named Vouchers', value: `<@${voucher1Id}> and <@${voucher2Id}>` }
                 )
-                .setFooter({ text: `Ticket: ${ticketId} • Named vouchers get first priority for 48hrs` })
+                .setFooter({ text: `Ticket: ${ticketId} • Any ΓΠ brother can approve` })
                 .setTimestamp();
 
             const row = new ActionRowBuilder<ButtonBuilder>()

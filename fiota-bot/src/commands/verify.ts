@@ -27,7 +27,7 @@ export default {
                         '1️⃣ Run `/verify-start` and select your chapter & industry\n' +
                         '2️⃣ Fill out your identity information\n' +
                         '3️⃣ Name two ΓΠ brothers who can vouch for you\n' +
-                        '4️⃣ Wait for your vouchers to approve (48hr window)\n\n' +
+                        '4️⃣ Wait for any ΓΠ brother to approve your request\n\n' +
                         '**You will receive:**\n' +
                         '✅ Full access to all channels\n' +
                         '✅ Professional Rolodex & networking tools\n' +
@@ -60,10 +60,6 @@ export default {
 
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('verify_brother_start')
-                    .setLabel('🦁 Brother Verification')
-                    .setStyle(ButtonStyle.Danger),
                 new ButtonBuilder()
                     .setCustomId('verify_guest_start')
                     .setLabel('🌍 Guest Access')

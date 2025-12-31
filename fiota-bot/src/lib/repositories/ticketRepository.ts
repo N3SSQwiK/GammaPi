@@ -17,9 +17,6 @@ export interface TicketRow {
     status: string;
 }
 
-// 48 hours in milliseconds
-const FALLBACK_WINDOW_MS = 48 * 60 * 60 * 1000;
-
 export const ticketRepository = {
     getById(ticketId: string): TicketRow | undefined {
         return db.prepare('SELECT * FROM verification_tickets WHERE ticket_id = ?').get(ticketId) as TicketRow | undefined;
@@ -46,18 +43,8 @@ export const ticketRepository = {
     },
 
     /**
-     * Check if a ticket is past the 48hr window (allowing any brother to approve)
-     */
-    isPastFallbackWindow(ticket: TicketRow): boolean {
-        const createdAt = new Date(ticket.created_at).getTime();
-        const now = Date.now();
-        return (now - createdAt) >= FALLBACK_WINDOW_MS;
-    },
-
-    /**
      * Check if a user can approve a ticket
-     * - Named vouchers can always approve their tickets
-     * - Any brother can approve after 48hrs
+     * - Any ΓΠ brother can approve any ticket
      * - Returns reason if not allowed
      */
     canApprove(ticket: TicketRow, approverId: string): { allowed: boolean; reason?: string } {
@@ -71,23 +58,8 @@ export const ticketRepository = {
             return { allowed: false, reason: 'You have already approved this ticket.' };
         }
 
-        // Named vouchers can always approve
-        const isNamedVoucher = ticket.named_voucher_1 === approverId || ticket.named_voucher_2 === approverId;
-        if (isNamedVoucher) {
-            return { allowed: true };
-        }
-
-        // After 48hrs, any brother can approve
-        if (this.isPastFallbackWindow(ticket)) {
-            return { allowed: true };
-        }
-
-        // Not allowed - named voucher window still active
-        const hoursRemaining = Math.ceil((FALLBACK_WINDOW_MS - (Date.now() - new Date(ticket.created_at).getTime())) / (60 * 60 * 1000));
-        return {
-            allowed: false,
-            reason: `Only the named vouchers can approve for the first 48 hours. ${hoursRemaining} hours remaining.`
-        };
+        // Any brother can approve
+        return { allowed: true };
     },
 
     /**
