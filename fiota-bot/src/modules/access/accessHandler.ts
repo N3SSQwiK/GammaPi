@@ -13,6 +13,159 @@ export async function handleAccessButton(interaction: Interaction) {
     if (!interaction.isButton()) return;
 
     try {
+        // Main verification gate button - shows choice screen
+        if (interaction.customId === 'verify_gate_start') {
+            const embed = new EmbedBuilder()
+                .setColor('#B41528')
+                .setTitle('Choose Your Verification Path')
+                .setDescription('Please select the option that applies to you:')
+                .addFields(
+                    {
+                        name: '🦁 I\'m a Brother',
+                        value: 'I was initiated into a chapter of Phi Iota Alpha Fraternity.'
+                    },
+                    {
+                        name: '🌍 I\'m a Guest',
+                        value: 'I\'m a prospective member, family, friend, or professional contact.'
+                    }
+                );
+
+            const row = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('verify_choice_brother')
+                        .setLabel('🦁 I\'m a Brother')
+                        .setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder()
+                        .setCustomId('verify_choice_guest')
+                        .setLabel('🌍 I\'m a Guest')
+                        .setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder()
+                        .setCustomId('verify_choice_cancel')
+                        .setLabel('❌ Cancel')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+            await interaction.reply({
+                embeds: [embed],
+                components: [row],
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Brother choice - show instructions for /verify-start
+        if (interaction.customId === 'verify_choice_brother') {
+            const embed = new EmbedBuilder()
+                .setColor('#B41528')
+                .setTitle('🦁 Brother Verification')
+                .setDescription(
+                    'Welcome, Hermano! To verify as a brother, you\'ll need to:\n\n' +
+                    '**Step 1:** Run the `/verify-start` command\n' +
+                    '**Step 2:** Select your chapter and industry from the searchable list\n' +
+                    '**Step 3:** Fill out your identity information\n' +
+                    '**Step 4:** Name two ΓΠ brothers who can vouch for you\n\n' +
+                    'Once submitted, any ΓΠ brother can approve your request.\n\n' +
+                    '**Type `/verify-start` in any channel to begin.**'
+                )
+                .setFooter({ text: 'Phi Iota Alpha Fraternity • La Unión Hace La Fuerza' });
+
+            const row = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('verify_gate_back')
+                        .setLabel('← Back')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+            await interaction.update({
+                embeds: [embed],
+                components: [row]
+            });
+            return;
+        }
+
+        // Guest choice - show guest flow
+        if (interaction.customId === 'verify_choice_guest') {
+            const embed = new EmbedBuilder()
+                .setColor('#B41528')
+                .setTitle('🌍 Guest Access')
+                .setDescription(
+                    'Welcome to Gamma Pi!\n\n' +
+                    'As a guest, you\'ll have access to:\n' +
+                    '• Public channels and announcements\n' +
+                    '• Event invitations\n' +
+                    '• Networking opportunities\n\n' +
+                    '**Guest verification is coming soon.**\n' +
+                    'For now, please introduce yourself in the public channels and a brother will assist you.'
+                )
+                .setFooter({ text: 'Phi Iota Alpha Fraternity • La Unión Hace La Fuerza' });
+
+            const row = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('verify_gate_back')
+                        .setLabel('← Back')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+            await interaction.update({
+                embeds: [embed],
+                components: [row]
+            });
+            return;
+        }
+
+        // Back button - return to choice screen (updates existing message)
+        if (interaction.customId === 'verify_gate_back') {
+            const embed = new EmbedBuilder()
+                .setColor('#B41528')
+                .setTitle('Choose Your Verification Path')
+                .setDescription('Please select the option that applies to you:')
+                .addFields(
+                    {
+                        name: '🦁 I\'m a Brother',
+                        value: 'I was initiated into a chapter of Phi Iota Alpha Fraternity.'
+                    },
+                    {
+                        name: '🌍 I\'m a Guest',
+                        value: 'I\'m a prospective member, family, friend, or professional contact.'
+                    }
+                );
+
+            const row = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('verify_choice_brother')
+                        .setLabel('🦁 I\'m a Brother')
+                        .setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder()
+                        .setCustomId('verify_choice_guest')
+                        .setLabel('🌍 I\'m a Guest')
+                        .setStyle(ButtonStyle.Secondary),
+                    new ButtonBuilder()
+                        .setCustomId('verify_choice_cancel')
+                        .setLabel('❌ Cancel')
+                        .setStyle(ButtonStyle.Secondary)
+                );
+
+            await interaction.update({
+                embeds: [embed],
+                components: [row]
+            });
+            return;
+        }
+
+        // Cancel - dismiss the message
+        if (interaction.customId === 'verify_choice_cancel') {
+            await interaction.update({
+                content: 'Verification cancelled. Click the button in the welcome message to start again.',
+                embeds: [],
+                components: []
+            });
+            return;
+        }
+
         // Legacy button - redirect to /verify-start
         if (interaction.customId === 'verify_brother_start') {
             await interaction.reply({
@@ -22,8 +175,10 @@ export async function handleAccessButton(interaction: Interaction) {
             return;
         }
 
+        // Legacy guest button
         if (interaction.customId === 'verify_guest_start') {
             await interaction.reply({ content: 'LinkedIn Verification Link: [Click Here](https://linkedin.com) (Stub)', ephemeral: true });
+            return;
         }
 
         // Handle "Continue to Step 2" button from new verification flow
