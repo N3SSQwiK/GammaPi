@@ -7,28 +7,7 @@ import logger from '../../lib/logger';
 import { validateYearSemester, validatePhoneNumber, validateZipOrCity, validateName, normalizeName, normalizePhoneNumber } from '../../lib/validation';
 import { getChapterByValue } from '../../lib/constants';
 import { getDisplayName, formatChapterName } from '../../lib/displayNameBuilder';
-
-// Temporary storage for multi-step modal data (in production, consider Redis or DB)
-const pendingVerifications = new Map<string, {
-    chapter: string;
-    industry: string;
-    firstName: string;
-    lastName: string;
-    donName: string;
-    yearSemester: { year: number; semester: 'Spring' | 'Fall' };
-    jobTitle: string;
-    expiresAt: number;
-}>();
-
-// Clean up expired pending verifications every 5 minutes
-setInterval(() => {
-    const now = Date.now();
-    for (const [key, value] of pendingVerifications) {
-        if (value.expiresAt < now) {
-            pendingVerifications.delete(key);
-        }
-    }
-}, 5 * 60 * 1000);
+import { pendingVerifyStarts, pendingVerifications } from '../../lib/verificationState';
 
 // Helper to parse full name into first/last (temporary for legacy modal)
 function parseFullName(fullName: string): { firstName: string; lastName: string } {
@@ -346,22 +325,32 @@ export async function handleVerificationModals(interaction: ModalSubmitInteracti
  */
 async function handleModal1(interaction: ModalSubmitInteraction) {
     const customId = interaction.customId;
-    const encodedData = customId.replace('verify_modal_1_', '');
+    const stateUserId = customId.replace('verify_modal_1_', '');
+    const userId = interaction.user.id;
 
-    // Decode chapter and industry from customId
-    let chapter: string;
-    let industry: string;
-    try {
-        const decoded = JSON.parse(Buffer.from(encodedData, 'base64').toString());
-        chapter = decoded.chapter;
-        industry = decoded.industry;
-    } catch (e) {
+    // Verify the user matches the state
+    if (stateUserId !== userId) {
         await interaction.reply({
-            content: 'Invalid verification data. Please start over with `/verify-start`.',
+            content: 'Verification session mismatch. Please start over with `/verify-start`.',
             ephemeral: true
         });
         return;
     }
+
+    // Get chapter and industry from server-side state (stored by /verify-start)
+    const startData = pendingVerifyStarts.get(userId);
+    if (!startData) {
+        await interaction.reply({
+            content: 'Your verification session has expired. Please start over with `/verify-start`.',
+            ephemeral: true
+        });
+        return;
+    }
+
+    const { chapter, industry } = startData;
+
+    // Clean up the start data (we'll store combined data after validation)
+    pendingVerifyStarts.delete(userId);
 
     // Get form values
     const firstName = interaction.fields.getTextInputValue('first_name');
@@ -400,8 +389,7 @@ async function handleModal1(interaction: ModalSubmitInteraction) {
         return;
     }
 
-    // Store in pending verifications
-    const userId = interaction.user.id;
+    // Store in pending verifications (userId already defined above)
     pendingVerifications.set(userId, {
         chapter,
         industry,

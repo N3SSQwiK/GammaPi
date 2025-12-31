@@ -8,6 +8,7 @@ import {
     ActionRowBuilder
 } from 'discord.js';
 import { searchChapters, searchIndustries, getChapterByValue, isValidIndustry } from '../lib/constants';
+import { pendingVerifyStarts } from '../lib/verificationState';
 
 export default {
     data: new SlashCommandBuilder()
@@ -74,15 +75,18 @@ export default {
             return;
         }
 
-        // Show Modal 1: Identity (name fields + year/semester)
-        // Encode chapter and industry in customId for retrieval
-        const encodedData = Buffer.from(JSON.stringify({
+        // Store chapter and industry in server-side state (not in customId to avoid truncation)
+        const userId = interaction.user.id;
+        pendingVerifyStarts.set(userId, {
             chapter: chapterValue,
-            industry: industryValue
-        })).toString('base64').substring(0, 50); // Keep it short
+            industry: industryValue,
+            expiresAt: Date.now() + 15 * 60 * 1000 // 15 minute expiry
+        });
 
+        // Show Modal 1: Identity (name fields + year/semester)
+        // Use simple customId with just user ID - data is in server-side state
         const modal = new ModalBuilder()
-            .setCustomId(`verify_modal_1_${encodedData}`)
+            .setCustomId(`verify_modal_1_${userId}`)
             .setTitle('Verification - Step 1 of 2');
 
         const firstNameInput = new TextInputBuilder()
