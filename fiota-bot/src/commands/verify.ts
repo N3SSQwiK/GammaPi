@@ -22,10 +22,12 @@ export default {
                 {
                     name: '👔 ARE YOU A BROTHER OF PHI IOTA ALPHA?',
                     value:
-                        'If you were **initiated into any chapter** of Phi Iota Alpha Fraternity, select **Brother Verification** below.\n\n' +
-                        '**Requirements:**\n' +
-                        '• Must be an initiated brother (any chapter)\n' +
-                        '• Two active ΓΠ brothers must vouch for you\n\n' +
+                        'If you were **initiated into any chapter** of Phi Iota Alpha Fraternity, use the `/verify-start` command to begin verification.\n\n' +
+                        '**Verification Process:**\n' +
+                        '1️⃣ Run `/verify-start` and select your chapter & industry\n' +
+                        '2️⃣ Fill out your identity information\n' +
+                        '3️⃣ Name two ΓΠ brothers who can vouch for you\n' +
+                        '4️⃣ Wait for your vouchers to approve (48hr window)\n\n' +
                         '**You will receive:**\n' +
                         '✅ Full access to all channels\n' +
                         '✅ Professional Rolodex & networking tools\n' +

@@ -162,24 +162,50 @@ export async function handleAccessButton(interaction: Interaction) {
         if (interaction.customId.startsWith('approve_ticket_')) {
             const ticketId = interaction.customId.split('_')[2];
             const approver = interaction.user;
-            
+
+            // Check if approver is a brother
+            const approverUser = userRepository.getByDiscordId(approver.id);
+            if (!approverUser || (approverUser.status !== 'BROTHER' && approverUser.status !== 'OFFICER')) {
+                await interaction.reply({
+                    content: 'Only verified brothers can approve verification requests.',
+                    ephemeral: true
+                });
+                return;
+            }
+
+            // Get ticket and check approval permission
+            const currentTicket = ticketRepository.getById(ticketId);
+            if (!currentTicket) {
+                await interaction.reply({ content: 'Ticket not found.', ephemeral: true });
+                return;
+            }
+
+            // Use new canApprove logic with 48hr fallback
+            const canApproveResult = ticketRepository.canApprove(currentTicket, approver.id);
+            if (!canApproveResult.allowed) {
+                await interaction.reply({
+                    content: canApproveResult.reason || 'You cannot approve this ticket.',
+                    ephemeral: true
+                });
+                return;
+            }
+
+            // Process approval
             const processApproval = db.transaction(() => {
-                const currentTicket = ticketRepository.getById(ticketId);
-                
-                if (!currentTicket) return { success: false, msg: 'Ticket not found.' };
-                if (currentTicket.status === 'VERIFIED') return { success: false, msg: 'User already verified.' };
-                
-                if (currentTicket.voucher_1 === approver.id || currentTicket.voucher_2 === approver.id) {
-                    return { success: false, msg: 'You have already approved this ticket.' };
+                // Re-fetch ticket in transaction to avoid race conditions
+                const ticket = ticketRepository.getById(ticketId);
+                if (!ticket) return { success: false, msg: 'Ticket not found.' };
+                if (ticket.status === 'VERIFIED' || ticket.status === 'OVERRIDDEN') {
+                    return { success: false, msg: 'User already verified.' };
                 }
 
-                if (!currentTicket.voucher_1) {
-                    ticketRepository.updateVoucher1(ticketId, approver.id);
+                if (!ticket.voucher_1) {
+                    ticketRepository.recordFirstApproval(ticketId, approver.id);
                     return { success: true, status: '1/2' };
                 } else {
-                    ticketRepository.updateVoucher2(ticketId, approver.id);
-                    userRepository.updateStatus(currentTicket.user_id, 'BROTHER');
-                    return { success: true, status: 'VERIFIED', userId: currentTicket.user_id };
+                    ticketRepository.recordSecondApproval(ticketId, approver.id);
+                    userRepository.updateStatus(ticket.user_id, 'BROTHER');
+                    return { success: true, status: 'VERIFIED', userId: ticket.user_id };
                 }
             });
 
@@ -190,20 +216,34 @@ export async function handleAccessButton(interaction: Interaction) {
                 return;
             }
 
+            // Check if approver was a named voucher
+            const wasNamedVoucher = currentTicket.named_voucher_1 === approver.id ||
+                                    currentTicket.named_voucher_2 === approver.id;
+            const approvalType = wasNamedVoucher ? 'Named voucher' : 'Brother (48hr fallback)';
+
             if (result.status === '1/2') {
-                 await interaction.reply({ content: `✅ First approval recorded for Ticket ${ticketId}. One more needed.`, ephemeral: true });
+                await interaction.reply({
+                    content: `✅ First approval recorded! (${approvalType})\nTicket: ${ticketId}\nOne more approval needed.`,
+                    ephemeral: false
+                });
             } else if (result.status === 'VERIFIED') {
-                 const guild = interaction.guild;
-                 const member = await guild?.members.fetch(result.userId!);
-                 const brotherRole = guild?.roles.cache.find(r => r.name === '🦁 ΓΠ Brother');
-                 
-                 if (member && brotherRole) {
-                     await member.roles.add(brotherRole);
-                     await interaction.reply({ content: `✅✅ Second approval recorded! **${member.user.username}** is now Verified and has the Brother role.`, ephemeral: false });
-                 } else {
-                     await interaction.reply({ content: `✅ Verified (Database updated), but failed to assign Discord Role. Check logs.`, ephemeral: true });
-                     logger.error('[Access] Role assignment failed. Member or Role not found.');
-                 }
+                const guild = interaction.guild;
+                const member = await guild?.members.fetch(result.userId!);
+                const brotherRole = guild?.roles.cache.find(r => r.name === '🦁 ΓΠ Brother');
+
+                if (member && brotherRole) {
+                    await member.roles.add(brotherRole);
+                    await interaction.reply({
+                        content: `✅✅ Verification Complete! (${approvalType})\n\n**${member.user.username}** is now a verified Brother and has been granted the Brother role.`,
+                        ephemeral: false
+                    });
+                } else {
+                    await interaction.reply({
+                        content: `✅ Verified in database, but failed to assign Discord Role. Check logs.`,
+                        ephemeral: true
+                    });
+                    logger.error('[Access] Role assignment failed. Member or Role not found.');
+                }
             }
         }
     } catch (error) {
