@@ -72,12 +72,14 @@ fiota-bot/
 
 ### Key Features
 - **Rules Agreement**: Code of Conduct acceptance required before verification (`/rules` posts embed, `✅ Rules Accepted` role gates access)
-- **Dual-Voucher Verification**: Two-step member onboarding requiring approval from 2 active brothers
+- **Multi-Step Verification**: Enhanced onboarding via `/verify-start` command with autocomplete for chapter/industry selection, followed by two-modal flow for identity and voucher information
+- **Named Voucher System**: Verification requires naming 2 ΓΠ brothers who can vouch. Any ΓΠ brother can approve verification requests. E-Board can use `/verify-override` for immediate verification.
 - **Professional Rolodex**: Searchable database by industry, job title, location (`/find`)
 - **Pipeline Tracking**: Candidate and Interest status management (`/pipeline`)
 - **Server Audit**: Weekly automated validation of roles, channels, permissions (`/audit`)
 - **Golden State Enforcement**: Infrastructure-as-code via `serverConfig.ts` with `/setup` command
 - **Geographic Intelligence**: Auto-derive city/state/timezone from zip codes
+- **Don Name Support**: Brothers can set a "don name" (brother name) displayed as "Don Phoenix" in searches and profiles via `/profile-update`
 
 ### Development Commands
 ```bash
@@ -91,9 +93,20 @@ npm start             # Start bot (production: pm2 start dist/index.js)
 ### Critical Files
 - `src/modules/audit/serverConfig.ts` - The "Golden State" configuration defining all required roles (including `✅ Rules Accepted`), channels (including `#rules-and-conduct`), forum tags, and reactions
 - `src/modules/access/rulesHandler.ts` - Code of Conduct embed and agreement logic
-- `src/modules/access/accessHandler.ts` - Brother/Guest verification flow with dual-voucher system
+- `src/modules/access/accessHandler.ts` - Brother/Guest verification flow with dual-voucher system and multi-modal flow
+- `src/lib/constants.ts` - CHAPTERS (80+ Phi Iota Alpha chapters) and INDUSTRIES (50 NAICS-based categories) constants with autocomplete helpers
+- `src/lib/validation.ts` - Validation utilities for year/semester, phone numbers, voucher search, name matching
+- `src/lib/displayNameBuilder.ts` - Display name formatting with don name priority ("Don Phoenix" vs "John Smith")
 - `src/lib/repositories/` - All database access MUST go through repository pattern (UserRepository, VoteRepository, AttendanceRepository, TicketRepository)
 - `src/deploy-commands.ts` - MUST run `npm run deploy` after any changes to slash command definitions
+
+### Verification Commands
+- `/verify` - Admin command to post the verification gate embed in a channel
+- `/verify-start` - User command to begin verification (autocomplete for chapter/industry)
+- `/verify-override` - E-Board command to override a verification ticket immediately
+- `/chapter-assign` - E-Board command to assign a brother to a chapter (including hidden Omega)
+- `/profile-update` - User command to update profile info (don name, phone, job title, city)
+- `/bootstrap` - Server owner command to seed initial brothers on fresh install (proposed, see `openspec/changes/add-bootstrap-flow/`)
 
 ### Environment Variables
 Required in `.env`:
@@ -107,8 +120,16 @@ AUDIT_CHANNEL_ID=         # Channel for audit reports
 
 ### Database Schema
 SQLite database located at `data/fiota.db`:
-- `users` - Brother profiles with industry, location, verification status, `rules_agreed_at` timestamp
-- `verification_tickets` - Pending verification requests with dual-voucher tracking
+- `users` - Brother profiles including:
+  - Identity: `first_name`, `last_name`, `don_name`, `real_name` (generated column: `first_name || ' ' || last_name`)
+  - Chapter info: `chapter`, `initiation_year`, `initiation_semester`
+  - Contact: `phone_number`, `city`, `state_province`, `country`
+  - Professional: `industry`, `job_title`, `zip_code`
+  - Status: `status` (GUEST or BROTHER), `rules_agreed_at`
+- `verification_tickets` - Pending verification requests with:
+  - Named vouchers: `named_voucher_1`, `named_voucher_2` (Discord IDs, searched by name)
+  - Approval tracking: `voucher_1`, `voucher_2`, `voucher_1_at`, `voucher_2_at`
+  - Status: PENDING, PENDING_2 (1 approval), VERIFIED, EXPIRED, OVERRIDDEN
 - `votes` - Voting records with issue tracking
 - `attendance` - Meeting attendance logs
 

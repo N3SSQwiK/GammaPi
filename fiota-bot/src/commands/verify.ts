@@ -12,7 +12,8 @@ export default {
             .setTitle('🦁 Welcome to Gamma Pi')
             .setDescription(
                 'This is the official Discord server for the **Gamma Pi Graduate/Professional Chapter** of **Phi Iota Alpha Fraternity**.\n\n' +
-                'Please select the verification path that applies to you below.'
+                'To access the server, you must complete our verification process.\n\n' +
+                '**Click the button below to get started.**'
             )
             .addFields(
                 {
@@ -20,34 +21,16 @@ export default {
                     value: '\u200B'
                 },
                 {
-                    name: '👔 ARE YOU A BROTHER OF PHI IOTA ALPHA?',
-                    value:
-                        'If you were **initiated into any chapter** of Phi Iota Alpha Fraternity, select **Brother Verification** below.\n\n' +
-                        '**Requirements:**\n' +
-                        '• Must be an initiated brother (any chapter)\n' +
-                        '• Two active ΓΠ brothers must vouch for you\n\n' +
-                        '**You will receive:**\n' +
-                        '✅ Full access to all channels\n' +
-                        '✅ Professional Rolodex & networking tools\n' +
-                        '✅ Voting rights on chapter matters\n' +
-                        '✅ Access to career resources & mentorship'
+                    name: '👔 Brothers of Phi Iota Alpha',
+                    value: 'Full access to all channels, professional networking, voting rights, and career resources.'
                 },
                 {
                     name: '\u200B',
                     value: '\u200B'
                 },
                 {
-                    name: '🌍 ARE YOU A GUEST OR PROSPECTIVE MEMBER?',
-                    value:
-                        'If you are **interested in learning about Phi Iota Alpha** or connecting with the chapter, select **Guest Access** below.\n\n' +
-                        '**This includes:**\n' +
-                        '• Prospective members / Interests\n' +
-                        '• Family members or friends of brothers\n' +
-                        '• Professional contacts\n\n' +
-                        '**You will receive:**\n' +
-                        '⚠️ Limited access to public channels only\n' +
-                        '⚠️ Cannot participate in chapter votes\n' +
-                        '⚠️ May be invited to public events'
+                    name: '🌍 Guests & Prospective Members',
+                    value: 'Limited access to public channels and event invitations.'
                 },
                 {
                     name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
@@ -59,13 +42,9 @@ export default {
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()
-                    .setCustomId('verify_brother_start')
-                    .setLabel('🦁 Brother Verification')
-                    .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                    .setCustomId('verify_guest_start')
-                    .setLabel('🌍 Guest Access')
-                    .setStyle(ButtonStyle.Secondary)
+                    .setCustomId('verify_gate_start')
+                    .setLabel('🚀 Get Verified')
+                    .setStyle(ButtonStyle.Primary)
             );
 
         const channel = interaction.channel;
