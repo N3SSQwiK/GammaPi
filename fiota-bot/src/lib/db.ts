@@ -24,7 +24,7 @@ const initDb = () => {
             first_name TEXT,
             last_name TEXT,
             don_name TEXT,
-            real_name TEXT,  -- Legacy field, kept for backward compatibility with pre-Phase2 records
+            real_name TEXT GENERATED ALWAYS AS (TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))) STORED,
             -- Status & verification
             status TEXT CHECK(status IN ('GUEST', 'BROTHER')) DEFAULT 'GUEST',
             rules_agreed_at TEXT,

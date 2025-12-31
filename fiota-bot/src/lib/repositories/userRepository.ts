@@ -7,7 +7,7 @@ export interface UserRow {
     first_name: string | null;
     last_name: string | null;
     don_name: string | null;
-    real_name: string | null; // Legacy field - deprecated but kept for backward compatibility
+    real_name: string | null; // Generated column: TRIM(first_name || ' ' || last_name)
     // Status & verification
     status: 'GUEST' | 'BROTHER';
     rules_agreed_at: string | null;
@@ -106,59 +106,34 @@ export const userRepository = {
             return [];
         }
 
-        // Get Gamma Pi brothers only - include those with first/last name OR legacy real_name
-        // This ensures pre-Phase2 brothers (who only have real_name) are searchable
+        // Get Gamma Pi brothers with names
         // Only Gamma Pi brothers can vouch since this is a Gamma Pi Discord server
         const brothers = db.prepare(`
-            SELECT discord_id, first_name, last_name, don_name, real_name
+            SELECT discord_id, first_name, last_name, don_name
             FROM users
             WHERE status = 'BROTHER'
             AND chapter = 'gamma-pi'
-            AND (
-                (first_name IS NOT NULL AND last_name IS NOT NULL)
-                OR real_name IS NOT NULL
-            )
+            AND first_name IS NOT NULL
+            AND last_name IS NOT NULL
         `).all() as Array<{
             discord_id: string;
-            first_name: string | null;
-            last_name: string | null;
+            first_name: string;
+            last_name: string;
             don_name: string | null;
-            real_name: string | null;
         }>;
 
         // Calculate match scores and filter
         const results: Array<VoucherSearchResult & { score: number }> = [];
 
         for (const bro of brothers) {
-            // For legacy records, parse real_name into first/last
-            let firstName = bro.first_name;
-            let lastName = bro.last_name;
-
-            if (!firstName || !lastName) {
-                if (bro.real_name) {
-                    // Parse legacy real_name into first/last
-                    const parts = bro.real_name.trim().split(/\s+/);
-                    if (parts.length >= 2) {
-                        lastName = parts.pop() || '';
-                        firstName = parts.join(' ');
-                    } else {
-                        firstName = bro.real_name;
-                        lastName = '';
-                    }
-                } else {
-                    // Skip if no name data at all
-                    continue;
-                }
-            }
-
             const candidate: VoucherSearchResult = {
                 discord_id: bro.discord_id,
-                first_name: firstName,
-                last_name: lastName,
+                first_name: bro.first_name,
+                last_name: bro.last_name,
                 don_name: bro.don_name,
                 display_name: bro.don_name
-                    ? `Don ${bro.don_name} (${firstName} ${lastName})`
-                    : `${firstName} ${lastName}`.trim()
+                    ? `Don ${bro.don_name} (${bro.first_name} ${bro.last_name})`
+                    : `${bro.first_name} ${bro.last_name}`
             };
 
             const score = calculateNameMatchScore(terms, candidate);
@@ -177,52 +152,32 @@ export const userRepository = {
     /**
      * Get Gamma Pi brother by Discord ID for voucher validation
      * Only Gamma Pi brothers can be vouchers since this is a Gamma Pi Discord server
-     * Supports legacy records with only real_name
      */
     getBrotherForVoucher(discordId: string): VoucherSearchResult | null {
         const user = db.prepare(`
-            SELECT discord_id, first_name, last_name, don_name, real_name
+            SELECT discord_id, first_name, last_name, don_name
             FROM users
             WHERE discord_id = ? AND status = 'BROTHER' AND chapter = 'gamma-pi'
+            AND first_name IS NOT NULL AND last_name IS NOT NULL
         `).get(discordId) as {
             discord_id: string;
-            first_name: string | null;
-            last_name: string | null;
+            first_name: string;
+            last_name: string;
             don_name: string | null;
-            real_name: string | null;
         } | undefined;
 
         if (!user) {
             return null;
         }
 
-        // Handle legacy records with only real_name
-        let firstName = user.first_name;
-        let lastName = user.last_name;
-
-        if (!firstName || !lastName) {
-            if (user.real_name) {
-                const parts = user.real_name.trim().split(/\s+/);
-                if (parts.length >= 2) {
-                    lastName = parts.pop() || '';
-                    firstName = parts.join(' ');
-                } else {
-                    firstName = user.real_name;
-                    lastName = '';
-                }
-            } else {
-                return null;
-            }
-        }
-
         return {
             discord_id: user.discord_id,
-            first_name: firstName,
-            last_name: lastName,
+            first_name: user.first_name,
+            last_name: user.last_name,
             don_name: user.don_name,
             display_name: user.don_name
-                ? `Don ${user.don_name} (${firstName} ${lastName})`
-                : `${firstName} ${lastName}`.trim()
+                ? `Don ${user.don_name} (${user.first_name} ${user.last_name})`
+                : `${user.first_name} ${user.last_name}`
         };
     },
 
@@ -253,14 +208,11 @@ export const userRepository = {
 
     /**
      * Get full name for display
-     * Falls back to legacy real_name for pre-Phase2 records
+     * Uses the real_name generated column (computed from first_name + last_name)
      */
     getFullName(user: UserRow): string {
-        if (user.first_name && user.last_name) {
-            return `${user.first_name} ${user.last_name}`;
-        }
-        // Fall back to legacy real_name field
-        if (user.real_name) {
+        // real_name is a generated column: TRIM(first_name || ' ' || last_name)
+        if (user.real_name && user.real_name.trim()) {
             return user.real_name;
         }
         return 'Unknown';

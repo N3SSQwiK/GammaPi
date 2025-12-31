@@ -25,22 +25,20 @@ export function getDisplayName(user: UserRow, format: DisplayFormat = 'full'): s
     const firstName = user.first_name?.trim() || '';
     const lastName = user.last_name?.trim() || '';
     const donName = user.don_name?.trim() || '';
-    const realName = user.real_name?.trim() || '';  // Legacy fallback
+    // real_name is a generated column: TRIM(first_name || ' ' || last_name)
+    const fullName = user.real_name?.trim() || '';
 
-    const hasLegalName = firstName && lastName;
+    const hasFullName = fullName.length > 0;
     const hasDonName = donName.length > 0;
-    const hasRealName = realName.length > 0;
 
     switch (format) {
         case 'full':
-            if (hasDonName && hasLegalName) {
-                return `Don ${donName} (${firstName} ${lastName})`;
+            if (hasDonName && hasFullName) {
+                return `Don ${donName} (${fullName})`;
             } else if (hasDonName) {
                 return `Don ${donName}`;
-            } else if (hasLegalName) {
-                return `${firstName} ${lastName}`;
-            } else if (hasRealName) {
-                return realName;  // Legacy fallback
+            } else if (hasFullName) {
+                return fullName;
             }
             return 'Unknown Brother';
 
@@ -49,20 +47,17 @@ export function getDisplayName(user: UserRow, format: DisplayFormat = 'full'): s
                 return `Don ${donName}`;
             } else if (firstName) {
                 return firstName;
-            } else if (hasRealName) {
-                // Extract first name from legacy real_name
-                return realName.split(' ')[0];
             }
             return 'Unknown';
 
         case 'select':
             // For select menus: "Don Phoenix - Tech" or "John Smith - Finance"
-            const name = hasDonName ? `Don ${donName}` : hasLegalName ? `${firstName} ${lastName}` : hasRealName ? realName : 'Unknown';
+            const name = hasDonName ? `Don ${donName}` : hasFullName ? fullName : 'Unknown';
             const industry = user.industry ? ` - ${truncateIndustry(user.industry)}` : '';
             return `${name}${industry}`;
 
         default:
-            return hasLegalName ? `${firstName} ${lastName}` : hasRealName ? realName : 'Unknown';
+            return hasFullName ? fullName : 'Unknown';
     }
 }
 
