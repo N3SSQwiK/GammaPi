@@ -1,5 +1,5 @@
 import { Events, Interaction } from 'discord.js';
-import { handleAccessButton, handleAccessModal, handleVerificationModals } from '../modules/access/accessHandler';
+import { handleAccessButton, handleAccessModal, handleVerificationModals, handleProfileUpdateModal } from '../modules/access/accessHandler';
 import { handleRulesButton } from '../modules/access/rulesHandler';
 import logger from '../lib/logger';
 
@@ -51,6 +51,11 @@ export default {
             // Handle new verification modals (verify_modal_1, verify_modal_2)
             if (interaction.customId.startsWith('verify_modal_')) {
                 await handleVerificationModals(interaction);
+                return;
+            }
+            // Handle profile update modal
+            if (interaction.customId === 'profile_update_modal') {
+                await handleProfileUpdateModal(interaction);
                 return;
             }
             // Handle legacy Access Modals

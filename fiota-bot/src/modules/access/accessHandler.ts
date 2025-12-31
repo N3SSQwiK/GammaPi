@@ -616,3 +616,106 @@ async function handleModal2(interaction: ModalSubmitInteraction) {
         }
     }
 }
+
+/**
+ * Handle profile update modal submission
+ */
+export async function handleProfileUpdateModal(interaction: ModalSubmitInteraction) {
+    try {
+        const userId = interaction.user.id;
+
+        // Get current user
+        const user = userRepository.getByDiscordId(userId);
+        if (!user) {
+            await interaction.reply({
+                content: 'You are not in the database.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Get form values
+        const donName = interaction.fields.getTextInputValue('don_name').trim();
+        const phone = interaction.fields.getTextInputValue('phone').trim();
+        const jobTitle = interaction.fields.getTextInputValue('job_title').trim();
+        const city = interaction.fields.getTextInputValue('city').trim();
+
+        // Validate and prepare updates
+        const updates: Partial<{
+            discord_id: string;
+            don_name: string | undefined;
+            phone_number: string | undefined;
+            job_title: string | undefined;
+            city: string | undefined;
+        }> = { discord_id: userId };
+        const changes: string[] = [];
+
+        // Don name
+        if (donName && donName !== user.don_name) {
+            if (!validateName(donName, false)) {
+                await interaction.reply({
+                    content: 'Invalid don name. Use letters only, max 50 characters.',
+                    ephemeral: true
+                });
+                return;
+            }
+            updates.don_name = normalizeName(donName);
+            changes.push(`Don Name: ${updates.don_name}`);
+        } else if (!donName && user.don_name) {
+            // Clearing don name not allowed for now
+        }
+
+        // Phone
+        if (phone && phone !== user.phone_number) {
+            if (!validatePhoneNumber(phone)) {
+                await interaction.reply({
+                    content: 'Invalid phone number. Must have at least 10 digits.',
+                    ephemeral: true
+                });
+                return;
+            }
+            updates.phone_number = normalizePhoneNumber(phone);
+            changes.push(`Phone: ${updates.phone_number}`);
+        }
+
+        // Job title
+        if (jobTitle && jobTitle !== user.job_title) {
+            updates.job_title = jobTitle;
+            changes.push(`Job Title: ${jobTitle}`);
+        }
+
+        // City
+        if (city && city !== user.city) {
+            updates.city = city;
+            changes.push(`City: ${city}`);
+        }
+
+        if (changes.length === 0) {
+            await interaction.reply({
+                content: 'No changes detected.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Apply updates
+        userRepository.upsert(updates);
+
+        const newDisplayName = getDisplayName({ ...user, ...updates } as any, 'full');
+
+        await interaction.reply({
+            content: `**Profile Updated!**\n\nDisplay Name: ${newDisplayName}\n\n**Changes:**\n${changes.map(c => `• ${c}`).join('\n')}`,
+            ephemeral: true
+        });
+
+        logger.info(`[Access] Profile update: ${interaction.user.tag} (${userId}) updated: ${changes.join(', ')}`);
+    } catch (error) {
+        logger.error('[Access] Profile update modal error:', error);
+        if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({
+                content: 'An error occurred while updating your profile.',
+                ephemeral: true
+            });
+        }
+    }
+}

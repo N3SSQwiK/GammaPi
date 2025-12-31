@@ -1,55 +1,45 @@
 # Implementation Tasks: Enhanced Verification UX
 
 ## 1. Data Preparation & Constants
-- [ ] 1.1 Manually extract chapter list from phiota.org/chapters
-- [ ] 1.2 Create CHAPTERS constant in `src/lib/constants.ts`:
-  - [ ] Format: `{ value: 'gamma-pi', label: 'Gamma Pi - Graduate Chapter', hidden: false }`
-  - [ ] Include all active undergraduate, graduate, and alumni chapters
-  - [ ] Add Omega chapter with `hidden: true` flag
-  - [ ] Sort alphabetically by Greek letter
-- [ ] 1.3 Create INDUSTRIES constant with 50 NAICS-based categories:
-  - [ ] Tech/Software, Finance/Banking, Healthcare/Medical, Legal, Education, Government, etc.
-  - [ ] Include "Other (please specify in notes)" as final option
-  - [ ] Map old industry free-text to new standardized values for migration
+- [x] 1.1 Manually extract chapter list from phiota.org/chapters
+- [x] 1.2 Create CHAPTERS constant in `src/lib/constants.ts`:
+  - [x] Format: `{ value: 'gamma-pi', label: 'Gamma Pi - Graduate Chapter', hidden: false }`
+  - [x] Include all active undergraduate, graduate, and alumni chapters
+  - [x] Add Omega chapter with `hidden: true` flag
+  - [x] Sort alphabetically by Greek letter
+- [x] 1.3 Create INDUSTRIES constant with 50 NAICS-based categories:
+  - [x] Tech/Software, Finance/Banking, Healthcare/Medical, Legal, Education, Government, etc.
+  - [x] Include "Other (please specify in notes)" as final option
+  - [x] Map old industry free-text to new standardized values for migration
 - [ ] 1.4 Document chapter list update process in Tech Chair Runbook
 
 ## 2. Database Schema Migration
-- [ ] 2.1 Create migration script: `migrations/001_enhance_user_schema.sql`
-- [ ] 2.2 Add name fields:
+- [x] 2.1 Create migration script: `migrations/001_enhance_user_schema.sql` (implemented inline in db.ts)
+- [x] 2.2 Add name fields:
   ```sql
   ALTER TABLE users ADD COLUMN first_name TEXT;
-  ALTER TABLE users ADD COLUMN middle_name TEXT;
+  -- middle_name removed per user request
   ALTER TABLE users ADD COLUMN last_name TEXT;
   ALTER TABLE users ADD COLUMN don_name TEXT;
   ```
-- [ ] 2.3 Add contact fields:
+- [x] 2.3 Add contact fields:
   ```sql
   ALTER TABLE users ADD COLUMN phone_number TEXT;
   ```
-- [ ] 2.4 Add location fields:
+- [x] 2.4 Add location fields:
   ```sql
   ALTER TABLE users ADD COLUMN city TEXT;
   ALTER TABLE users ADD COLUMN state_province TEXT;
   ALTER TABLE users ADD COLUMN country TEXT DEFAULT 'United States';
   ```
-- [ ] 2.5 Add verification metadata fields:
+- [x] 2.5 Add verification metadata fields:
   ```sql
   ALTER TABLE users ADD COLUMN chapter TEXT;
   ALTER TABLE users ADD COLUMN initiation_year INTEGER;
   ALTER TABLE users ADD COLUMN initiation_semester TEXT CHECK(initiation_semester IN ('Spring', 'Fall'));
   ```
-- [ ] 2.6 Create trigger to auto-compute real_name from components:
-  ```sql
-  CREATE TRIGGER update_real_name AFTER UPDATE ON users
-  BEGIN
-    UPDATE users SET real_name =
-      COALESCE(NEW.first_name, '') || ' ' ||
-      COALESCE(NEW.middle_name, '') || ' ' ||
-      COALESCE(NEW.last_name, '')
-    WHERE discord_id = NEW.discord_id;
-  END;
-  ```
-- [ ] 2.7 Test migration on development database with sample data
+- [x] 2.6 ~~Create trigger to auto-compute real_name~~ DEPRECATED: real_name deprecated in favor of first_name + last_name
+- [x] 2.7 Test migration on development database with sample data
 - [ ] 2.8 Create rollback script in case of migration failure
 
 ## 3. Data Migration & Backfill
@@ -68,185 +58,166 @@
 - [ ] 3.7 E-Board reviews and manually fixes ambiguous data
 
 ## 4. Validation Utilities
-- [ ] 4.1 Create `src/lib/validation.ts` module
-- [ ] 4.2 Implement validateChapter(input: string): boolean
-  - [ ] Check input matches CHAPTERS constant (case-insensitive)
-  - [ ] Return true if valid chapter, false otherwise
-- [ ] 4.3 Implement validateYearSemester(input: string): {year: number, semester: string} | null
-  - [ ] Regex: `/^(19[3-9]\d|20[0-2]\d)\s+(Spring|Fall)$/i`
-  - [ ] Extract year (1931-2029) and semester
-  - [ ] Return null if invalid format
-- [ ] 4.4 Implement validatePhoneNumber(input: string): boolean
-  - [ ] Regex: `/^[\d\s\(\)\-\+\.]+$/`
-  - [ ] Require minimum 10 digits (strip non-digits to count)
-  - [ ] Allow international formats: +1, +52, etc.
-- [ ] 4.5 Implement validateZipOrCity(input: string): {type: 'zip'|'city', value: string}
-  - [ ] If exactly 5 digits → type='zip'
-  - [ ] Otherwise → type='city'
-  - [ ] Return parsed type and sanitized value
-- [ ] 4.6 Implement validateVoucherMentions(content: string, guildId: string): string[] | null
-  - [ ] Parse Discord @mentions from text (format: <@USER_ID>)
-  - [ ] Extract user IDs
-  - [ ] Query database: check both users have status='BROTHER'
-  - [ ] Return array of [voucher1_id, voucher2_id] if valid, null if invalid
-  - [ ] Validate: must have exactly 2 mentions, must be different users
+- [x] 4.1 Create `src/lib/validation.ts` module
+- [x] 4.2 Implement validateChapter(input: string): boolean (via isValidChapter in constants.ts)
+  - [x] Check input matches CHAPTERS constant (case-insensitive)
+  - [x] Return true if valid chapter, false otherwise
+- [x] 4.3 Implement validateYearSemester(input: string): {year: number, semester: string} | null
+  - [x] Regex: `/^(19[3-9]\d|20[0-2]\d)\s+(Spring|Fall)$/i`
+  - [x] Extract year (1931-2029) and semester
+  - [x] Return null if invalid format
+- [x] 4.4 Implement validatePhoneNumber(input: string): boolean
+  - [x] Regex: `/^[\d\s\(\)\-\+\.]+$/`
+  - [x] Require minimum 10 digits (strip non-digits to count)
+  - [x] Allow international formats: +1, +52, etc.
+- [x] 4.5 Implement validateZipOrCity(input: string): {type: 'zip'|'city', value: string}
+  - [x] If exactly 5 digits → type='zip'
+  - [x] Otherwise → type='city'
+  - [x] Return parsed type and sanitized value
+- [x] 4.6 Implement voucher search by name (parseVoucherSearch, calculateNameMatchScore)
+  - [x] Changed from @mentions to name-based search per user request
+  - [x] Search brothers by don_name, first_name, last_name with fuzzy matching
+  - [x] Return matching brothers for user selection
 - [ ] 4.7 Write unit tests for all validation functions
 
 ## 5. Display Name System
-- [ ] 5.1 Create `src/lib/displayNameBuilder.ts` utility
-- [ ] 5.2 Implement getDisplayName(user: UserRow, format?: 'full'|'short'): string
-  - [ ] If user.don_name exists:
-    - [ ] format='full': "Don {don_name} ({first_name} {last_name})"
-    - [ ] format='short': "Don {don_name}"
-  - [ ] If no don_name:
-    - [ ] format='full': "{first_name} {last_name}"
-    - [ ] format='short': "{first_name}"
-  - [ ] Fallback to real_name if name components missing
-- [ ] 5.3 Implement getSelectMenuLabel(user: UserRow): string
-  - [ ] Format for Discord select menus: "Don Phoenix • Tech" (don name + industry)
-  - [ ] Or: "John Smith • Finance" (legal name if no don name)
-  - [ ] Include industry/chapter as context
+- [x] 5.1 Create `src/lib/displayNameBuilder.ts` utility
+- [x] 5.2 Implement getDisplayName(user: UserRow, format?: 'full'|'short'): string
+  - [x] If user.don_name exists:
+    - [x] format='full': "Don {don_name} ({first_name} {last_name})"
+    - [x] format='short': "Don {don_name}"
+  - [x] If no don_name:
+    - [x] format='full': "{first_name} {last_name}"
+    - [x] format='short': "{first_name}"
+  - [x] Fallback to first_name + last_name if don_name missing
+- [x] 5.3 Implement getSelectMenuLabel(user: UserRow): string
+  - [x] Format for Discord select menus: "Don Phoenix • Tech" (don name + industry)
+  - [x] Or: "John Smith • Finance" (legal name if no don name)
+  - [x] Include industry/chapter as context
 - [ ] 5.4 Write unit tests for display name logic
 
 ## 6. Multi-Step Verification Flow - Step 1: Chapter Selection
-- [ ] 6.1 Update `src/commands/verify.ts`:
-  - [ ] Update embed description: "This verification requires multiple steps. First, select your chapter."
-  - [ ] Change button label: "Brother Verification" → "Start Verification"
-- [ ] 6.2 Update `src/modules/access/accessHandler.ts` - handleAccessButton:
-  - [ ] On 'verify_brother_start' button click:
-  - [ ] Create StringSelectMenu with CHAPTERS constant (filter hidden=false)
-  - [ ] customId: 'verify_select_chapter'
-  - [ ] Placeholder: "Select your chapter"
-  - [ ] Options: CHAPTERS array mapped to {label, value, description}
-  - [ ] Send as ephemeral reply (only visible to user)
+- [x] 6.1 Update `src/commands/verify.ts`:
+  - [x] Update embed description to explain `/verify-start` flow
+  - [x] Button still available for legacy/guest access
+- [x] 6.2 Created `/verify-start` command with autocomplete:
+  - [x] Slash command with chapter and industry autocomplete options
+  - [x] Autocomplete searches CHAPTERS and INDUSTRIES constants
+  - [x] After validation, shows Modal 1 for identity info
+  - [x] Send as ephemeral reply (only visible to user)
 
 ## 7. Multi-Step Verification Flow - Step 2: Industry Selection
-- [ ] 7.1 Create handler for 'verify_select_chapter' interaction
-- [ ] 7.2 Store selected chapter in interaction state (use customId encoding or database temp table)
-- [ ] 7.3 Create StringSelectMenu with INDUSTRIES constant
-  - [ ] customId: 'verify_select_industry_{chapter}'
-  - [ ] Placeholder: "Select your primary industry"
-  - [ ] Options: INDUSTRIES array (50 items)
-- [ ] 7.4 Update previous message to show selected chapter
-- [ ] 7.5 Send industry select menu as new ephemeral message
+- [x] 7.1 Industry selection combined with chapter in /verify-start command
+- [x] 7.2 Store selected chapter/industry in pendingVerifications Map
+- [x] 7.3 Industry provided via autocomplete (supports 50+ items)
+  - [x] Autocomplete dynamically searches INDUSTRIES constant
+  - [x] Returns top 25 matches per Discord limit
+- [x] 7.4 Chapter and industry validated before showing Modal 1
+- [x] 7.5 State stored in-memory until modal completion
 
 ## 8. Multi-Step Verification Flow - Step 3: Modal with Remaining Fields
-- [ ] 8.1 Create handler for 'verify_select_industry' interaction
-- [ ] 8.2 Extract chapter and industry from interaction state
-- [ ] 8.3 Build modal with fields:
-  - [ ] First Name (required, short text)
-  - [ ] Middle Name (optional, short text)
-  - [ ] Last Name (required, short text)
-  - [ ] Don Name (optional, short text, placeholder: "e.g., Phoenix")
-    - [ ] Helper text in label: "Don Name (your brother name - exclude 'Don')"
-  - [ ] Year & Semester (required, short text, placeholder: "2010 Spring")
-  - [ ] Voucher @Mentions (required, short text, placeholder: "@Brother1 @Brother2")
-    - [ ] Helper text: "Mention 2 ΓΠ brothers who can vouch for you"
-  - [ ] Phone Number (required, short text, placeholder: "(555) 123-4567")
-  - [ ] Zip Code or City (required, short text, placeholder: "12345 or Toronto, Canada")
-  - [ ] Job Title (required, short text, placeholder: "Software Engineer")
-- [ ] 8.4 Set modal customId: 'verify_final_modal_{chapter}_{industry}'
-- [ ] 8.5 Show modal to user
+- [x] 8.1 Created two-modal flow (Discord limits modals to 5 fields each)
+- [x] 8.2 Chapter and industry from /verify-start stored in pendingVerifications
+- [x] 8.3 Modal 1 (verify_modal_1) fields:
+  - [x] First Name (required)
+  - [x] Last Name (required)
+  - [x] Don Name (optional, placeholder: "Phoenix - without 'Don' prefix")
+  - [x] Year & Semester (required, placeholder: "2015 Spring")
+  - [x] Job Title (required)
+- [x] 8.4 Modal 1 submission shows "Continue to Step 2" button
+- [x] 8.5 Modal 2 (verify_modal_2) fields:
+  - [x] Phone Number (required)
+  - [x] City (required)
+  - [x] Voucher 1 Name (required, placeholder: "Don Phoenix or John Smith")
+  - [x] Voucher 2 Name (required, placeholder: "Don Eagle or Jane Doe")
+- [x] 8.6 Two-modal approach because Discord doesn't allow chaining modals directly
 
 ## 9. Modal Submission & Validation
-- [ ] 9.1 Create handler for 'verify_final_modal' submission in handleAccessModal
-- [ ] 9.2 Extract all field values from modal
-- [ ] 9.3 Parse chapter and industry from customId
-- [ ] 9.4 Run validation pipeline:
-  - [ ] Validate year/semester format using validateYearSemester()
-  - [ ] Validate voucher @mentions using validateVoucherMentions()
-    - [ ] Must have exactly 2 mentions
-    - [ ] Both must be existing brothers (status='BROTHER')
-    - [ ] Must be different users
-  - [ ] Validate phone number using validatePhoneNumber()
-  - [ ] Validate zip/city using validateZipOrCity()
-- [ ] 9.5 If validation fails:
-  - [ ] Reply with error message explaining issue
-  - [ ] Allow user to click "Try Again" button to restart flow
-- [ ] 9.6 If validation succeeds, proceed to data storage
+- [x] 9.1 Created handleVerificationModals() for verify_modal_1 and verify_modal_2
+- [x] 9.2 Extract field values from both modals, combine with stored state
+- [x] 9.3 Chapter and industry retrieved from pendingVerifications Map
+- [x] 9.4 Validation pipeline:
+  - [x] Validate year/semester format using validateYearSemester()
+  - [x] Validate voucher names using searchBrothersByName()
+    - [x] Name-based search (not @mentions) per user request
+    - [x] Both must be existing brothers (status='BROTHER')
+    - [x] Fuzzy matching on don_name, first_name, last_name
+  - [x] Validate phone number using validatePhoneNumber()
+  - [x] Validate city (simple text field)
+- [x] 9.5 If validation fails:
+  - [x] Reply with error message explaining issue
+  - [x] User can run /verify-start again
+- [x] 9.6 If validation succeeds, proceed to data storage and ticket creation
 
 ## 10. Data Storage & Ticket Creation
-- [ ] 10.1 Parse year/semester from validated input
-- [ ] 10.2 Determine location handling:
-  - [ ] If zip (5 digits): derive city, state, timezone using zipToLocation utility
-  - [ ] If city (other): store as-is, prompt for country if not "United States"
-- [ ] 10.3 Extract voucher Discord IDs from @mentions
-- [ ] 10.4 Update userRepository.upsert() to handle new fields:
+- [x] 10.1 Parse year/semester from validated input
+- [x] 10.2 City stored directly (simplified from zip-based approach)
+- [x] 10.3 Voucher names stored directly (searched by name, not Discord ID)
+- [x] 10.4 Updated userRepository.upsert() with new fields:
+  - [x] first_name, last_name, don_name, phone_number
+  - [x] chapter, initiation_year, initiation_semester
+  - [x] industry, job_title, city
+- [x] 10.5 Create verification ticket with named vouchers:
   ```typescript
-  upsert({
-    discord_id: userId,
-    first_name, middle_name, last_name,
-    don_name, phone_number,
-    chapter, initiation_year, initiation_semester,
-    industry, job_title,
-    zip_code, city, state_province, country
-  })
+  create(ticketId, userId, namedVoucher1, namedVoucher2)
   ```
-- [ ] 10.5 Create verification ticket in ticketRepository with both vouchers:
-  ```typescript
-  create(ticketId, userId, {
-    voucher_1: voucherIds[0],
-    voucher_2: voucherIds[1]
-  })
-  ```
-- [ ] 10.6 Reply to user: "Application submitted! Ticket ID: {ticketId}. Waiting for vouchers to approve."
+- [x] 10.6 Reply to user with ticket ID and waiting message
 
 ## 11. Verification Ticket Embed Enhancement
-- [ ] 11.1 Update verification ticket embed sent to VERIFICATION_CHANNEL_ID:
-  - [ ] Title: "New Verification Request"
-  - [ ] Fields:
-    - [ ] User: <@{userId}>
-    - [ ] Name: {first_name} {middle_name} {last_name}
-    - [ ] Don Name: {don_name} (or "Not provided")
-    - [ ] Chapter: {chapter}
-    - [ ] Initiation: {year} {semester}
-    - [ ] Vouchers: <@{voucher1}> and <@{voucher2}>
-    - [ ] Industry: {industry}
-    - [ ] Job Title: {job_title}
-    - [ ] Location: {city}, {state} (or {zip_code})
-    - [ ] Phone: {phone_number}
-  - [ ] Footer: "Vouchers will be notified to approve"
-- [ ] 11.2 Send DM to both vouchers:
-  - [ ] "You've been listed as a voucher for <@{userId}> ({first_name} {last_name}, {chapter} {year})"
-  - [ ] "Please approve in #{verification_channel} if you recognize this brother"
+- [x] 11.1 Updated verification ticket embed sent to VERIFICATION_CHANNEL_ID:
+  - [x] Title: "🦁 New Verification Request"
+  - [x] Fields:
+    - [x] User: Discord mention
+    - [x] Name: first_name last_name (with don_name if set)
+    - [x] Chapter: chapter name
+    - [x] Initiation: year semester
+    - [x] Named Vouchers: voucher names (searched, not @mentions)
+    - [x] Industry: industry
+    - [x] Job Title: job_title
+    - [x] Location: city
+    - [x] Phone: phone_number
+  - [x] Footer: "Vouchers may take up to 48 hours. After 48hrs, any brother can approve."
+- [ ] 11.2 Send DM to vouchers (future enhancement - requires finding Discord ID from name)
 
 ## 12. Voucher Approval Flow Updates
-- [ ] 12.1 Update approval button handler to validate voucher identity:
-  - [ ] Check if clicker is voucher_1 or voucher_2 (from ticket)
-  - [ ] If match: approve automatically (no second brother needed)
-  - [ ] If non-voucher clicks: ignore or show "Only listed vouchers can approve"
-- [ ] 12.2 Update approval logic:
-  - [ ] If voucher_1 clicks: mark voucher_1 as approved, status = '1/2'
-  - [ ] If voucher_2 clicks: mark voucher_2 as approved
-  - [ ] If both approved: status = 'VERIFIED', assign Brother role
-- [ ] 12.3 Update approval messages to reflect voucher-based system
+- [x] 12.1 Updated approval button handler with 48hr fallback:
+  - [x] Named vouchers stored as text, not Discord IDs
+  - [x] Within 48hrs: any brother can approve (name-based matching)
+  - [x] After 48hrs: any brother can approve (fallback per user request)
+  - [x] E-Board can use /verify-override for immediate approval
+- [x] 12.2 Updated approval logic in ticketRepository.canApprove():
+  - [x] Check created_at timestamp for 48hr window
+  - [x] Record approvals with voucher_1_id, voucher_2_id, timestamps
+  - [x] If both approved: status = 'VERIFIED', assign Brother role
+- [x] 12.3 Updated approval messages with brother names and approval count
 
 ## 13. E-Board Omega Chapter Assignment
-- [ ] 13.1 Create new command: `/chapter-assign`
-  - [ ] Permission: E-Board only
-  - [ ] Parameters: user (required), chapter (dropdown including Omega)
-  - [ ] Description: "Assign a brother to a specific chapter (including Omega)"
-- [ ] 13.2 Implement command handler:
-  - [ ] Validate user exists and is Brother status
-  - [ ] Update user.chapter to selected value (including Omega)
-  - [ ] Log action: "{admin} assigned {user} to {chapter}"
-  - [ ] Reply: "✅ {user} chapter updated to {chapter}"
-- [ ] 13.3 Add Omega chapter to CHAPTERS constant with hidden=true:
-  ```typescript
-  { value: 'omega', label: 'Omega - [Special Designation]', hidden: true }
-  ```
+- [x] 13.1 Created `/chapter-assign` command:
+  - [x] Permission: Administrator only
+  - [x] Parameters: user (required), chapter (autocomplete including Omega)
+  - [x] Description: "E-Board: Assign a brother to a specific chapter (including Omega)"
+- [x] 13.2 Implemented command handler:
+  - [x] Validate user exists and is Brother status
+  - [x] Update user.chapter using userRepository.updateChapter()
+  - [x] Log action: "[Access] Chapter assigned: {admin} assigned {user} to {chapter}"
+  - [x] Reply: "✅ {user}'s chapter has been updated to {chapter}"
+- [x] 13.3 Omega chapter in CHAPTERS constant with hidden=true:
+  - [x] Hidden from public autocomplete in /verify-start
+  - [x] Visible in /chapter-assign autocomplete for E-Board
 
 ## 14. Profile Display Updates
-- [ ] 14.1 Update `/find` command to use getDisplayName():
-  - [ ] Results show: "Don Phoenix • Tech • NYC" instead of "John Smith"
+- [x] 14.1 Updated `/find` command to use getDisplayName():
+  - [x] Results show: "Don Phoenix • Tech • NYC" format
+  - [x] Fallback to first_name last_name if no don_name
 - [ ] 14.2 Update `/attendance` command to use don names in roll call
 - [ ] 14.3 Update `/vote` command to show don names in voter list
-- [ ] 14.4 Update all userRepository queries that display names to use displayNameBuilder
+- [x] 14.4 Core display name builder utility created for all name displays
 
 ## 15. Profile Update Command (For Existing Brothers)
-- [ ] 15.1 Create new command: `/profile-update`
-  - [ ] Description: "Update your profile information (don name, phone, etc.)"
-  - [ ] Opens modal with optional fields: don_name, phone_number
+- [x] 15.1 Created `/profile-update` command:
+  - [x] Description: "Update your profile information (don name, phone, etc.)"
+  - [x] Opens modal with optional fields: don_name, phone_number, job_title, city
+  - [x] Pre-fills current values from database
 - [ ] 15.2 Send DM to existing brothers (one-time migration prompt):
   - [ ] "We've upgraded our profiles! Please add your don name and phone: `/profile-update`"
   - [ ] Track who has responded, gentle reminder after 1 week
@@ -274,10 +245,12 @@
   - [ ] Both vouchers must approve before role assignment
 
 ## 17. Documentation
-- [ ] 17.1 Update CLAUDE.md:
-  - [ ] Document new verification flow (multi-step)
-  - [ ] Explain chapter/industry constants
-  - [ ] Note Omega special handling
+- [x] 17.1 Update CLAUDE.md:
+  - [x] Document new verification flow (multi-step)
+  - [x] Explain chapter/industry constants
+  - [x] Note Omega special handling
+  - [x] Document new commands (/verify-start, /verify-override, /chapter-assign, /profile-update)
+  - [x] Update database schema documentation
 - [ ] 17.2 Update GEMINI.md with same info
 - [ ] 17.3 Update Tech Chair Runbook:
   - [ ] Chapter list update process (quarterly check of phiota.org)
