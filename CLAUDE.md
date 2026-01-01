@@ -87,6 +87,7 @@ cd fiota-bot
 npm install           # Install dependencies
 npm run build         # Compile TypeScript to dist/
 npm run deploy        # Register slash commands (required on first run and after command changes)
+npm run export        # Export database tables to CSV (for Power Query/Excel)
 npm start             # Start bot (production: pm2 start dist/index.js)
 ```
 
@@ -245,3 +246,37 @@ Before deploying FiotaBot changes:
 1. Use `/openspec:proposal` for new features
 2. Follow spec format in `openspec/specs/`
 3. Apply with `/openspec:apply` after validation
+
+**Export Data for Reporting (Power Query/Excel/Power BI):**
+
+The bot includes a data export script that generates CSV files for use with Power Query, Excel, or Power BI.
+
+1. **On the VPS**, run the export:
+   ```bash
+   ssh root@YOUR_VPS_IP
+   cd /root/GammaPi/fiota-bot
+   npm run export
+   ```
+   This creates CSV files in `exports/`:
+   - `users.csv` - Brother profiles and professional info
+   - `verification_tickets.csv` - Verification request history
+   - `attendance.csv` - Meeting attendance logs
+   - `votes.csv` - Poll voting records
+   - `_export_metadata.json` - Export timestamp and summary
+
+2. **Download to your Mac** (from a local terminal, not SSH):
+   ```bash
+   scp "root@YOUR_VPS_IP:/root/GammaPi/fiota-bot/exports/*.csv" ~/Downloads/
+   ```
+   > **Note**: The quotes are required for zsh to prevent local glob expansion.
+
+3. **Import into Power Query**:
+   - Excel: **Data** → **Get Data** → **From Text/CSV**
+   - Power BI: **Get Data** → **Text/CSV**
+
+**Direct SQLite queries on VPS** (alternative):
+```bash
+ssh root@YOUR_VPS_IP
+cd /root/GammaPi/fiota-bot
+sqlite3 -header -csv fiota.db "SELECT * FROM users WHERE status='BROTHER';"
+```
