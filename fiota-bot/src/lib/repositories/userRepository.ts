@@ -192,6 +192,17 @@ export const userRepository = {
         `).all() as UserRow[];
     },
 
+    /**
+     * Count total brothers in database (for bootstrap threshold check)
+     * Used to disable bootstrap command once 2+ brothers exist
+     */
+    countBrothers(): number {
+        const result = db.prepare(
+            'SELECT COUNT(*) as count FROM users WHERE status = ?'
+        ).get('BROTHER') as { count: number };
+        return result.count;
+    },
+
     recordRulesAgreement(discordId: string): void {
         const timestamp = new Date().toISOString();
         db.prepare(`

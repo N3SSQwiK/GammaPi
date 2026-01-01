@@ -185,6 +185,16 @@ SELECT discord_id, first_name, last_name FROM users WHERE rules_agreed_at IS NUL
 - `/verify-start` - User starts verification (autocomplete for chapter/industry)
 - `/verify-override ticket_id:ABC123` - E-Board immediate approval
 - `/chapter-assign user:@Brother chapter:Omega` - Assign chapter (including hidden Omega)
+- `/bootstrap` - Server owner seeds first brothers on fresh install (auto-disables after 2 brothers)
+
+### 🚀 Fresh Server Bootstrap
+On a brand new Discord server with no brothers:
+1. **Run `/setup`** - Creates all required roles and channels
+2. **Server owner runs `/bootstrap`** - Self-registers as first brother
+3. **Second founding brother runs `/bootstrap`** - Now you have 2 brothers
+4. **Normal verification resumes** - `/verify-start` works with dual-voucher approval
+
+*Note: `/bootstrap` only works for server owner and auto-disables once 2+ brothers exist.*
 
 ### ⏱️ 48-Hour Fallback
 Named vouchers get 48-hour priority to approve tickets. After 48 hours, any brother can approve.
@@ -311,12 +321,37 @@ sudo cat /etc/shadow          # ❌ Denied
 | `src/lib/constants.ts` | CHAPTERS (80+) and INDUSTRIES (50) constants |
 | `src/lib/validation.ts` | Input validation utilities |
 | `src/lib/displayNameBuilder.ts` | Don name display formatting |
+| `src/lib/serverRequirements.ts` | Central registry for server structure requirements |
+| `src/modules/*/requirements.ts` | Module-specific role/channel declarations |
 | `src/modules/access/accessHandler.ts` | Verification flow logic |
-| `src/modules/audit/serverConfig.ts` | Golden State configuration |
+| `src/modules/audit/serverConfig.ts` | Golden State aggregator (imports all requirements.ts) |
+| `src/commands/bootstrap.ts` | Server owner bootstrap command |
 | `src/commands/verify-start.ts` | Multi-step verification command |
 | `src/commands/verify-override.ts` | E-Board override command |
 | `src/commands/chapter-assign.ts` | E-Board chapter assignment |
 | `src/commands/profile-update.ts` | User profile updates |
+| `src/commands/mentor.ts` | Mentorship toggle command |
+
+### 🏗️ Adding Server Structure (Roles/Channels)
+To add new roles or channels for a feature:
+
+1. **Create/update `requirements.ts`** in your module folder:
+   ```typescript
+   import { registerRequirements } from '../../lib/serverRequirements';
+   registerRequirements('my-feature', {
+       roles: ['🎯 New Role'],
+       channels: [{ name: 'new-channel', type: ChannelType.GuildText }]
+   });
+   ```
+
+2. **Import in `serverConfig.ts`**:
+   ```typescript
+   import '../my-feature/requirements';
+   ```
+
+3. **Build and deploy**: `npm run build && npm run deploy`
+
+4. **Run `/setup`** in Discord to create the new structure
 
 ---
 **Maintained by Gamma Pi Tech Chair**

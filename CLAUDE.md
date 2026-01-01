@@ -91,7 +91,9 @@ npm start             # Start bot (production: pm2 start dist/index.js)
 ```
 
 ### Critical Files
-- `src/modules/audit/serverConfig.ts` - The "Golden State" configuration defining all required roles (including `✅ Rules Accepted`), channels (including `#rules-and-conduct`), forum tags, and reactions
+- `src/modules/audit/serverConfig.ts` - The "Golden State" configuration that auto-aggregates roles/channels from module `requirements.ts` files
+- `src/modules/*/requirements.ts` - Each module declares its required roles/channels (colocation pattern)
+- `src/lib/serverRequirements.ts` - Central registry for aggregating module requirements
 - `src/modules/access/rulesHandler.ts` - Code of Conduct embed and agreement logic
 - `src/modules/access/accessHandler.ts` - Brother/Guest verification flow with dual-voucher system and multi-modal flow
 - `src/lib/constants.ts` - CHAPTERS (80+ Phi Iota Alpha chapters) and INDUSTRIES (50 NAICS-based categories) constants with autocomplete helpers
@@ -106,7 +108,11 @@ npm start             # Start bot (production: pm2 start dist/index.js)
 - `/verify-override` - E-Board command to override a verification ticket immediately
 - `/chapter-assign` - E-Board command to assign a brother to a chapter (including hidden Omega)
 - `/profile-update` - User command to update profile info (don name, phone, job title, city)
-- `/bootstrap` - Server owner command to seed initial brothers on fresh install (proposed, see `openspec/changes/add-bootstrap-flow/`)
+- `/bootstrap` - Server owner command to seed initial brothers on fresh install (auto-disables after 2 brothers exist)
+
+### Networking Commands
+- `/find` - Search brothers by industry, job title, or location
+- `/mentor` - Toggle mentorship availability (assigns/removes `🧠 Open to Mentor` role)
 
 ### Environment Variables
 Required in `.env`:
@@ -216,10 +222,19 @@ Before deploying FiotaBot changes:
 3. Run `npm run deploy` to register with Discord
 4. Restart bot
 
-**Modify server structure:**
-1. Update `src/modules/audit/serverConfig.ts`
-2. Test with `/setup` in a test server
-3. Validate with `/audit`
+**Modify server structure (Golden State):**
+1. Create or update `requirements.ts` in your module folder:
+   ```typescript
+   import { registerRequirements } from '../../lib/serverRequirements';
+   registerRequirements('my-feature', {
+       roles: ['🎯 New Role'],
+       channels: [{ name: 'new-channel', type: ChannelType.GuildText }]
+   });
+   ```
+2. Import your requirements in `src/modules/audit/serverConfig.ts`
+3. Run `npm run build` to compile
+4. Test with `/setup` in Discord (creates missing roles/channels)
+5. Validate with `/audit`
 
 **Add database fields:**
 1. Update repository in `src/lib/repositories/`

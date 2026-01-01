@@ -178,14 +178,33 @@ For subsequent updates after the bot is already running:
 
 ## 🛡️ Phase 4: Operational Usage Guide
 
-### 4.0 How to Set Up Rules & Verification Channels
-1.  **Admin:** Go to `#rules-and-conduct` channel.
-2.  **Command:** Type `/rules`.
-3.  **Bot:** Posts the Code of Conduct embed with "I Agree" button.
-4.  **Admin:** Go to `#welcome-gate` channel.
-5.  **Command:** Type `/verify`.
-6.  **Bot:** Posts the verification gate explaining the `/verify-start` flow.
-7.  **Permissions:** Ensure `#welcome-gate` is only visible to users with `✅ Rules Accepted` role.
+### 4.0 Fresh Server Setup (First Time Only)
+*Complete these steps in order on a brand new Discord server:*
+
+1.  **Create Server Structure:**
+    *   **Command:** `/setup`
+    *   **Bot:** Creates all required roles and channels (Golden State).
+    *   *Note:* Manually arrange channel categories after this.
+
+2.  **Bootstrap First Brothers (Chicken-and-Egg Solution):**
+    *   **Problem:** Verification requires 2 brothers to approve, but fresh install has none.
+    *   **Solution:** Server owner uses `/bootstrap` to self-register.
+    *   **Command:** `/bootstrap`
+    *   **Bot:** Shows modal for: First Name, Last Name, Don Name (optional), Year & Semester.
+    *   **Result:** Owner becomes first brother with 🦁 ΓΠ Brother role.
+    *   **Repeat:** Have one more founding brother join and use `/bootstrap`.
+    *   *Note:* `/bootstrap` auto-disables after 2 brothers exist.
+
+3.  **Set Up Rules Channel:**
+    *   **Navigate:** Go to `#rules-and-conduct` channel.
+    *   **Command:** Type `/rules`.
+    *   **Bot:** Posts the Code of Conduct embed with "I Agree" button.
+
+4.  **Set Up Verification Gate:**
+    *   **Navigate:** Go to `#welcome-gate` channel.
+    *   **Command:** Type `/verify`.
+    *   **Bot:** Posts the verification gate explaining the `/verify-start` flow.
+    *   **Permissions:** Ensure `#welcome-gate` is only visible to users with `✅ Rules Accepted` role.
 
 ### 4.1 How to Verify a New Brother (Multi-Step Flow)
 1.  **New Brother:** Joins Discord. Lands in `#rules-and-conduct`.
@@ -242,6 +261,8 @@ For deceased brothers or special assignments:
 
 | Command | Permission | Description |
 |---------|------------|-------------|
+| `/setup` | Admin | Create missing roles/channels (Golden State) |
+| `/bootstrap` | Server Owner | Seed first brothers on fresh install |
 | `/rules` | Admin | Post Code of Conduct embed |
 | `/verify` | Admin | Post verification gate embed |
 | `/verify-start` | Everyone | Start multi-step verification |
@@ -249,9 +270,9 @@ For deceased brothers or special assignments:
 | `/chapter-assign` | Admin | Assign chapter to brother |
 | `/profile-update` | Everyone | Update your profile |
 | `/find` | Everyone | Search brother directory |
+| `/mentor` | Everyone | Toggle mentorship availability |
 | `/attendance` | Admin | Start attendance check-in |
 | `/audit` | Admin | Run server security audit |
-| `/setup` | Admin | Enforce Golden State config |
 
 ---
 

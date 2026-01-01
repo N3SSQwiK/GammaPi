@@ -1,5 +1,33 @@
-// The Golden State Configuration
+/**
+ * THE GOLDEN STATE CONFIGURATION
+ *
+ * This file aggregates server requirements from all feature modules.
+ * Each module declares its own roles/channels in a requirements.ts file,
+ * ensuring the config stays in sync with the code that uses it.
+ *
+ * To add new requirements:
+ * 1. Create/update requirements.ts in your module folder
+ * 2. Import it below to register it
+ * 3. The Golden State automatically includes your requirements
+ */
+
 import { ChannelType } from 'discord.js';
+import { getAggregatedRequirements, ChannelRequirement } from '../../lib/serverRequirements';
+
+// ============================================================================
+// IMPORT ALL MODULE REQUIREMENTS
+// Each import triggers registerRequirements() for that module
+// ============================================================================
+
+import '../access/requirements';
+import '../networking/requirements';
+import '../pipeline/requirements';
+import '../community/requirements';
+import './requirements';  // audit module's own requirements
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 export interface ExpectedChannel {
     name: string;
@@ -10,17 +38,32 @@ export interface ExpectedChannel {
     requireTag?: boolean;
 }
 
-export const EXPECTED_ROLES = [
-    '🦁 E-Board',
-    '🦁 Line Committee',
-    '🦁 ΓΠ Brother',
-    '🦁 Visiting Brother',
-    '🦁 Brother at Large',
-    '👔 Candidate',
-    '🌍 Guest',
-    '✅ Rules Accepted'
-];
+// ============================================================================
+// AGGREGATED GOLDEN STATE
+// ============================================================================
 
+// Get all requirements from registered modules
+const aggregated = getAggregatedRequirements();
+
+/**
+ * All roles required by the bot across all features
+ * Auto-aggregated from module requirements.ts files
+ */
+export const EXPECTED_ROLES: string[] = aggregated.roles;
+
+/**
+ * All channels required by the bot across all features
+ * Auto-aggregated from module requirements.ts files
+ */
+export const EXPECTED_CHANNELS: ExpectedChannel[] = aggregated.channels;
+
+// ============================================================================
+// SECURITY CONSTRAINTS (not module-specific)
+// ============================================================================
+
+/**
+ * Permissions that should NEVER be granted to @everyone
+ */
 export const FORBIDDEN_EVERYONE_PERMS = [
     'Administrator',
     'ManageRoles',
@@ -29,35 +72,11 @@ export const FORBIDDEN_EVERYONE_PERMS = [
     'BanMembers'
 ];
 
-export const EXPECTED_CHANNELS: ExpectedChannel[] = [
-    // Public
-    { name: 'announcements', type: ChannelType.GuildText },
-    { name: 'rules-and-conduct', type: ChannelType.GuildText },
-    { name: 'welcome-gate', type: ChannelType.GuildText },
-    
-    // Forums
-    { 
-        name: 'career-center', 
-        type: ChannelType.GuildForum, 
-        tags: ['💼 Hiring', '👀 Seeking', '📍 Remote'],
-        guidelines: "Post job opportunities or ask for career advice. Use tags to help brothers filter.",
-        defaultReaction: '💼',
-        requireTag: true
-    },
-    { 
-        name: 'lions-den', 
-        type: ChannelType.GuildForum, 
-        tags: ['👋 My Life', '🏋️ Fitness', '👨‍💻 Projects', '🎮 Gaming', '🍳 Food', '🤝 Philanthropy', '📚 Education', '💪 Training'],
-        guidelines: "Create ONE thread to serve as your personal blog/feed. Share updates on your life, projects, or fitness journey. Follow other brothers to stay connected.",
-        defaultReaction: '🦁',
-        requireTag: true
-    },
-    {
-        name: 'tech-support',
-        type: ChannelType.GuildForum,
-        tags: ['🐛 Bug', '✨ Feature'],
-        guidelines: "Report bugs or suggest features for FiotaBot.",
-        defaultReaction: '🐛',
-        requireTag: true
-    }
-];
+// ============================================================================
+// DEBUG: Log what was aggregated (remove in production)
+// ============================================================================
+
+if (process.env.DEBUG_SERVER_CONFIG) {
+    console.log('[ServerConfig] Aggregated roles:', EXPECTED_ROLES);
+    console.log('[ServerConfig] Aggregated channels:', EXPECTED_CHANNELS.map(c => c.name));
+}
