@@ -190,11 +190,10 @@ This project uses spec-driven development:
 
 ## Critical Documentation Files
 
+- **FiotaBot_Operations_Manual.md** - Unified operations guide (setup, daily ops, maintenance, security)
 - **GEMINI.md** - Comprehensive overview (build instructions, architecture)
-- **FiotaBot_Implementation_SOP.md** - Step-by-step deployment guide
 - **GammaPi_Discord_Migration_Report.md** - Strategic migration plan
 - **FiotaBot_Spec.md** - Technical specification and schema
-- **GammaPi_Tech_Chair_Runbook.md** - Operational runbook for tech chairs
 
 ## Security & Credentials
 
