@@ -777,3 +777,124 @@ export async function handleProfileUpdateModal(interaction: ModalSubmitInteracti
         }
     }
 }
+
+/**
+ * Handle bootstrap modal submission (founding brother registration)
+ * This is used when the server owner needs to seed the first brothers
+ */
+export async function handleBootstrapModal(interaction: ModalSubmitInteraction) {
+    try {
+        const customId = interaction.customId;
+        const expectedUserId = customId.replace('bootstrap_modal_', '');
+        const userId = interaction.user.id;
+
+        // Verify user matches (security check)
+        if (expectedUserId !== userId) {
+            await interaction.reply({
+                content: 'Session mismatch. Please try again.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Double-check guild and owner status (in case of race condition)
+        const guild = interaction.guild;
+        if (!guild || guild.ownerId !== userId) {
+            await interaction.reply({
+                content: 'Only the server owner can complete bootstrap registration.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Double-check threshold (in case another bootstrap happened during modal)
+        const brotherCount = userRepository.countBrothers();
+        if (brotherCount >= 2) {
+            await interaction.reply({
+                content: 'Bootstrap is no longer available. Another owner has already bootstrapped the server.',
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Get form values
+        const firstName = interaction.fields.getTextInputValue('first_name');
+        const lastName = interaction.fields.getTextInputValue('last_name');
+        const donName = interaction.fields.getTextInputValue('don_name') || '';
+        const yearSemesterInput = interaction.fields.getTextInputValue('year_semester');
+
+        // Validate inputs
+        const errors: string[] = [];
+
+        if (!validateName(firstName, true)) {
+            errors.push('First name is required (letters only, max 50 characters)');
+        }
+        if (!validateName(lastName, true)) {
+            errors.push('Last name is required (letters only, max 50 characters)');
+        }
+        if (donName && !validateName(donName, false)) {
+            errors.push('Don name must be letters only, max 50 characters');
+        }
+
+        const yearSemester = validateYearSemester(yearSemesterInput);
+        if (!yearSemester) {
+            errors.push('Year & Semester must be format "YYYY Spring" or "YYYY Fall" (e.g., 2015 Spring)');
+        }
+
+        if (errors.length > 0) {
+            await interaction.reply({
+                content: `**Validation Errors:**\n${errors.map(e => `• ${e}`).join('\n')}\n\nPlease try again with \`/bootstrap\`.`,
+                ephemeral: true
+            });
+            return;
+        }
+
+        // Create/update user record
+        const normalizedFirst = normalizeName(firstName);
+        const normalizedLast = normalizeName(lastName);
+        const normalizedDon = donName ? normalizeName(donName) : undefined;
+
+        userRepository.upsert({
+            discord_id: userId,
+            first_name: normalizedFirst,
+            last_name: normalizedLast,
+            don_name: normalizedDon,
+            chapter: 'gamma-pi',
+            initiation_year: yearSemester!.year,
+            initiation_semester: yearSemester!.semester,
+            status: 'BROTHER'
+        });
+
+        // Assign brother role
+        const member = await guild.members.fetch(userId);
+        const brotherRole = guild.roles.cache.find(r => r.name === '🦁 ΓΠ Brother');
+
+        if (brotherRole) {
+            await member.roles.add(brotherRole);
+        } else {
+            logger.warn('[Bootstrap] Brother role not found. Run /setup to create server structure.');
+        }
+
+        // Log the bootstrap event
+        const displayName = normalizedDon
+            ? `Don ${normalizedDon} (${normalizedFirst} ${normalizedLast})`
+            : `${normalizedFirst} ${normalizedLast}`;
+
+        logger.info(`[Bootstrap] ${interaction.user.tag} (${userId}) bootstrapped as founding brother: ${displayName}`);
+
+        // Reply to user
+        await interaction.reply({
+            content: `**You have been registered as a founding brother.**\n\nName: ${displayName}\nChapter: Gamma Pi\nInitiated: ${yearSemester!.year} ${yearSemester!.semester}\n\nYou can now approve verification requests from other brothers.`,
+            ephemeral: true
+        });
+
+    } catch (error) {
+        logger.error('[Bootstrap] Modal error:', error);
+        if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({
+                content: 'An error occurred during bootstrap registration. Please try again.',
+                ephemeral: true
+            });
+        }
+    }
+}
