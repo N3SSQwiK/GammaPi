@@ -14,11 +14,17 @@ const BOOTSTRAP_THRESHOLD = 2;
 export default {
     data: new SlashCommandBuilder()
         .setName('bootstrap')
-        .setDescription('Server owner: Register yourself as a founding brother on a fresh installation'),
+        .setDescription('Server owner: Register founding brothers on a fresh installation')
+        .addUserOption(option =>
+            option
+                .setName('user')
+                .setDescription('User to bootstrap (defaults to yourself)')
+                .setRequired(false)
+        ),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const guild = interaction.guild;
-        const userId = interaction.user.id;
+        const invokerId = interaction.user.id;
 
         // Must be in a guild
         if (!guild) {
@@ -30,7 +36,7 @@ export default {
         }
 
         // Check 1: Only server owner can use this command
-        if (guild.ownerId !== userId) {
+        if (guild.ownerId !== invokerId) {
             await interaction.reply({
                 content: 'Only the server owner can use this command.',
                 ephemeral: true
@@ -48,24 +54,32 @@ export default {
             return;
         }
 
-        // Check 3: If owner is already a brother, inform them
-        const existingUser = userRepository.getByDiscordId(userId);
+        // Determine target user (self or specified user)
+        const targetUser = interaction.options.getUser('user') || interaction.user;
+        const targetId = targetUser.id;
+        const isSelf = targetId === invokerId;
+
+        // Check 3: If target is already a brother, inform them
+        const existingUser = userRepository.getByDiscordId(targetId);
         if (existingUser?.status === 'BROTHER') {
             await interaction.reply({
-                content: 'You are already registered as a brother.',
+                content: isSelf
+                    ? 'You are already registered as a brother.'
+                    : `${targetUser.username} is already registered as a brother.`,
                 ephemeral: true
             });
             return;
         }
 
         // Show bootstrap modal
+        // CustomId format: bootstrap_modal_{invokerId}_{targetId}
         const modal = new ModalBuilder()
-            .setCustomId(`bootstrap_modal_${userId}`)
-            .setTitle('Founding Brother Registration');
+            .setCustomId(`bootstrap_modal_${invokerId}_${targetId}`)
+            .setTitle(isSelf ? 'Founding Brother Registration' : `Register ${targetUser.username}`);
 
         const firstNameInput = new TextInputBuilder()
             .setCustomId('first_name')
-            .setLabel('First Name')
+            .setLabel(isSelf ? 'First Name' : `${targetUser.username}'s First Name`)
             .setStyle(TextInputStyle.Short)
             .setRequired(true)
             .setMaxLength(50)
@@ -73,7 +87,7 @@ export default {
 
         const lastNameInput = new TextInputBuilder()
             .setCustomId('last_name')
-            .setLabel('Last Name')
+            .setLabel(isSelf ? 'Last Name' : `${targetUser.username}'s Last Name`)
             .setStyle(TextInputStyle.Short)
             .setRequired(true)
             .setMaxLength(50)
@@ -81,7 +95,7 @@ export default {
 
         const donNameInput = new TextInputBuilder()
             .setCustomId('don_name')
-            .setLabel('Don Name (your brother name, optional)')
+            .setLabel('Don Name (brother name, optional)')
             .setStyle(TextInputStyle.Short)
             .setRequired(false)
             .setMaxLength(50)
@@ -101,7 +115,8 @@ export default {
             new ActionRowBuilder<TextInputBuilder>().addComponents(yearSemesterInput)
         );
 
-        logger.info(`[Bootstrap] ${interaction.user.tag} (${userId}) initiated bootstrap flow`);
+        const targetDesc = isSelf ? 'self' : `user ${targetUser.tag}`;
+        logger.info(`[Bootstrap] ${interaction.user.tag} (${invokerId}) initiated bootstrap for ${targetDesc}`);
         await interaction.showModal(modal);
     }
 };

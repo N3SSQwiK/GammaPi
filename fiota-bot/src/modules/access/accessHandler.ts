@@ -781,15 +781,20 @@ export async function handleProfileUpdateModal(interaction: ModalSubmitInteracti
 /**
  * Handle bootstrap modal submission (founding brother registration)
  * This is used when the server owner needs to seed the first brothers
+ * CustomId format: bootstrap_modal_{invokerId}_{targetId}
  */
 export async function handleBootstrapModal(interaction: ModalSubmitInteraction) {
     try {
         const customId = interaction.customId;
-        const expectedUserId = customId.replace('bootstrap_modal_', '');
-        const userId = interaction.user.id;
+        const invokerId = interaction.user.id;
 
-        // Verify user matches (security check)
-        if (expectedUserId !== userId) {
+        // Parse customId: bootstrap_modal_{invokerId}_{targetId}
+        const parts = customId.replace('bootstrap_modal_', '').split('_');
+        const expectedInvokerId = parts[0];
+        const targetId = parts[1] || parts[0]; // Fallback for old format
+
+        // Verify invoker matches (security check)
+        if (expectedInvokerId !== invokerId) {
             await interaction.reply({
                 content: 'Session mismatch. Please try again.',
                 ephemeral: true
@@ -799,7 +804,7 @@ export async function handleBootstrapModal(interaction: ModalSubmitInteraction) 
 
         // Double-check guild and owner status (in case of race condition)
         const guild = interaction.guild;
-        if (!guild || guild.ownerId !== userId) {
+        if (!guild || guild.ownerId !== invokerId) {
             await interaction.reply({
                 content: 'Only the server owner can complete bootstrap registration.',
                 ephemeral: true
@@ -811,7 +816,7 @@ export async function handleBootstrapModal(interaction: ModalSubmitInteraction) 
         const brotherCount = userRepository.countBrothers();
         if (brotherCount >= 2) {
             await interaction.reply({
-                content: 'Bootstrap is no longer available. Another owner has already bootstrapped the server.',
+                content: 'Bootstrap is no longer available. The server already has 2+ brothers.',
                 ephemeral: true
             });
             return;
@@ -849,13 +854,14 @@ export async function handleBootstrapModal(interaction: ModalSubmitInteraction) 
             return;
         }
 
-        // Create/update user record
+        // Create/update user record for TARGET user
         const normalizedFirst = normalizeName(firstName);
         const normalizedLast = normalizeName(lastName);
         const normalizedDon = donName ? normalizeName(donName) : undefined;
+        const isSelf = targetId === invokerId;
 
         userRepository.upsert({
-            discord_id: userId,
+            discord_id: targetId,
             first_name: normalizedFirst,
             last_name: normalizedLast,
             don_name: normalizedDon,
@@ -865,12 +871,12 @@ export async function handleBootstrapModal(interaction: ModalSubmitInteraction) 
             status: 'BROTHER'
         });
 
-        // Assign brother role
-        const member = await guild.members.fetch(userId);
+        // Assign brother role to TARGET user
+        const targetMember = await guild.members.fetch(targetId);
         const brotherRole = guild.roles.cache.find(r => r.name === '🦁 ΓΠ Brother');
 
         if (brotherRole) {
-            await member.roles.add(brotherRole);
+            await targetMember.roles.add(brotherRole);
         } else {
             logger.warn('[Bootstrap] Brother role not found. Run /setup to create server structure.');
         }
@@ -880,11 +886,19 @@ export async function handleBootstrapModal(interaction: ModalSubmitInteraction) 
             ? `Don ${normalizedDon} (${normalizedFirst} ${normalizedLast})`
             : `${normalizedFirst} ${normalizedLast}`;
 
-        logger.info(`[Bootstrap] ${interaction.user.tag} (${userId}) bootstrapped as founding brother: ${displayName}`);
+        if (isSelf) {
+            logger.info(`[Bootstrap] ${interaction.user.tag} (${invokerId}) bootstrapped as founding brother: ${displayName}`);
+        } else {
+            logger.info(`[Bootstrap] ${interaction.user.tag} (${invokerId}) bootstrapped ${targetMember.user.tag} (${targetId}) as founding brother: ${displayName}`);
+        }
 
         // Reply to user
+        const successMessage = isSelf
+            ? `**You have been registered as a founding brother.**\n\nName: ${displayName}\nChapter: Gamma Pi\nInitiated: ${yearSemester!.year} ${yearSemester!.semester}\n\nYou can now approve verification requests from other brothers.`
+            : `**${targetMember.user.username} has been registered as a founding brother.**\n\nName: ${displayName}\nChapter: Gamma Pi\nInitiated: ${yearSemester!.year} ${yearSemester!.semester}\n\nThey can now approve verification requests from other brothers.`;
+
         await interaction.reply({
-            content: `**You have been registered as a founding brother.**\n\nName: ${displayName}\nChapter: Gamma Pi\nInitiated: ${yearSemester!.year} ${yearSemester!.semester}\n\nYou can now approve verification requests from other brothers.`,
+            content: successMessage,
             ephemeral: true
         });
 
