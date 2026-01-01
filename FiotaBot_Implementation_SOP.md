@@ -99,6 +99,7 @@
     ```bash
     npm install
     ```
+    *   *Note:* Use `npm install` for **first-time setup only**. For subsequent updates, see Section 2.4.
 2.  **Build the Bot:**
     ```bash
     npm run build
@@ -121,6 +122,33 @@
     pm2 save
     pm2 startup
     ```
+
+### 2.4 Updating the Bot (After Initial Setup)
+For subsequent updates after the bot is already running:
+1.  **Pull Latest Code:**
+    ```bash
+    git pull
+    ```
+    *   *If you get a conflict* (especially with `package-lock.json`), run:
+    ```bash
+    git checkout -- fiota-bot/package-lock.json
+    git pull
+    ```
+2.  **Clean Install Dependencies:**
+    ```bash
+    npm ci
+    ```
+    *   **IMPORTANT:** Use `npm ci` (not `npm install`) for updates. It installs exactly what's in the lock file without modifying it.
+3.  **Rebuild & Deploy:**
+    ```bash
+    npm run build
+    npm run deploy
+    ```
+4.  **Restart Bot:**
+    ```bash
+    pm2 restart FiotaBot
+    ```
+    *   *Note:* Process name is case-sensitive (`FiotaBot`, not `fiota-bot`).
 
 ---
 
