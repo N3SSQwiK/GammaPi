@@ -255,6 +255,51 @@ For deceased brothers or special assignments:
     *   🔴 "CRITICAL: @everyone has Admin" = Fix immediately.
     *   ⚠️ "Missing Tag" = Go add the tag to the Forum.
 
+### 4.6 How to Export Data for Reporting (Power Query/Excel/Power BI)
+*Goal: Extract chapter data for reports, dashboards, or analysis.*
+
+**Step 1: Run the Export on VPS**
+1.  **Open Terminal:** New terminal on your Mac.
+2.  **SSH into VPS:**
+    ```bash
+    ssh root@YOUR_VPS_IP
+    ```
+3.  **Navigate & Export:**
+    ```bash
+    cd /root/GammaPi/fiota-bot
+    npm run export
+    ```
+4.  **Verify Output:** You should see:
+    ```
+    ✅ Exported users: X rows
+    ✅ Exported verification_tickets: X rows
+    ✅ Exported attendance: X rows
+    ✅ Exported votes: X rows
+    ```
+5.  **Exit VPS:** Type `exit`.
+
+**Step 2: Download CSVs to Your Mac**
+1.  **Open New Terminal:** (Not SSH'd into VPS)
+2.  **Download Files:**
+    ```bash
+    scp "root@YOUR_VPS_IP:/root/GammaPi/fiota-bot/exports/*.csv" ~/Downloads/
+    ```
+    *   **IMPORTANT:** The quotes are required on Mac (zsh) to prevent glob expansion errors.
+
+**Step 3: Import into Power Query**
+1.  **Excel:** Data → Get Data → From Text/CSV
+2.  **Power BI:** Get Data → Text/CSV
+3.  **Select File:** Choose `users.csv`, `attendance.csv`, etc. from Downloads.
+
+**Exported Files:**
+| File | Contents |
+|------|----------|
+| `users.csv` | Brother profiles (name, chapter, industry, job title, location) |
+| `verification_tickets.csv` | Verification request history and approvals |
+| `attendance.csv` | Meeting attendance records |
+| `votes.csv` | Poll voting records |
+| `_export_metadata.json` | Export timestamp and summary |
+
 ---
 
 ## 📋 Command Reference
