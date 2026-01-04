@@ -1,21 +1,37 @@
 # Bot Core Specification
 
-## Core Requirements
+## Purpose
+
+Define the core infrastructure, constants, validation utilities, and slash commands for the FiotaBot Discord bot.
+
+## Requirements
 
 ### Requirement: Server Configuration Source
 The bot MUST load its expected configuration from serverConfig.ts for Golden State enforcement.
 
-#### Scenario: Config Loading
-- **WHEN** the bot starts or the `/setup` command is run
+#### Scenario: Config Loading via /init
+- **WHEN** the `/init` command is run
 - **THEN** it MUST read configuration from `serverConfig.ts`
-- **AND** validate server state against expected roles, channels, and permissions
+- **AND** create missing roles and channels
+- **AND** apply permission overwrites to channels
+
+#### Scenario: Config Loading via /audit
+- **WHEN** admin runs `/audit` command
+- **THEN** it MUST read configuration from `serverConfig.ts`
+- **AND** report discrepancies between expected and actual state
 
 ### Requirement: Advanced Channel Configuration
 The system MUST support configuring advanced channel properties.
 
 #### Scenario: Tag Enforcement
 - **WHEN** the configuration specifies `requireTag: true` for a Forum
-- **THEN** the `/setup` command MUST enforce this setting
+- **THEN** the `/init` command MUST enforce this setting
+
+#### Scenario: Permission Overwrites
+- **WHEN** the configuration specifies `permissionOverwrites` for a channel
+- **THEN** the `/init` command MUST apply these permission settings
+- **AND** resolve role names to role IDs
+- **AND** apply allow/deny permission bits
 
 ## Constants Management
 
@@ -39,7 +55,7 @@ The system SHALL maintain a list of Phi Iota Alpha chapters with metadata.
 #### Scenario: Omega chapter hidden
 - **WHEN** verification autocomplete is built
 - **THEN** Omega chapter (hidden=true) is excluded
-- **WHEN** /chapter-assign autocomplete is built (E-Board)
+- **WHEN** /chapter-assign or /init autocomplete is built
 - **THEN** ALL chapters including Omega are shown
 
 ### Requirement: Industry Constants
@@ -105,20 +121,47 @@ The system SHALL provide `src/lib/displayNameBuilder.ts` for consistent name ren
 
 ## Slash Commands
 
+### Requirement: Initialization Command
+The system SHALL provide `/init` for complete server setup.
+
+#### /init
+- **Description:** Initialize server and register founding brothers (owner only)
+- **Options:**
+  - chapter (required, autocomplete from ALL CHAPTERS including hidden)
+  - industry (required, autocomplete from INDUSTRIES)
+  - user (optional, User, defaults to command invoker)
+- **Flow:**
+  1. Runs Golden State setup (creates roles/channels)
+  2. Posts Rules embed to #rules-and-conduct
+  3. Posts Verification Gate to #welcome-gate
+  4. Shows "Light the Torch" button for founding brother registration
+  5. Two-modal flow collects identity and contact info
+  6. Creates user record and assigns Brother role
+- **Guards:**
+  - Only server owner can use
+  - Disabled after 2+ brothers exist
+
 ### Requirement: Verification Commands
 The system SHALL provide commands for the verification flow.
 
 #### /verify
 - **Description:** Post verification gate embed (admin only)
-- **Usage:** Run in `#welcome-gate` channel
-- **Action:** Posts embed with Brother/Guest verification options
+- **Usage:** Run in any channel (typically #welcome-gate)
+- **Action:** Posts embed with "🚀 Get Verified" button
+- **Note:** This is a repair command; /init posts this automatically
+
+#### /rules
+- **Description:** Post Code of Conduct embed (admin only)
+- **Usage:** Run in any channel (typically #rules-and-conduct)
+- **Action:** Posts rules embed with "✅ I Agree" button
+- **Note:** This is a repair command; /init posts this automatically
 
 #### /verify-start
 - **Description:** Start brother verification process
 - **Options:**
   - chapter (required, autocomplete from CHAPTERS where hidden=false)
   - industry (required, autocomplete from INDUSTRIES)
-- **Flow:** Validates inputs → Modal 1 → Button → Modal 2 → Ticket creation
+- **Flow:** Checks rules → Validates inputs → Modal 1 → Button → Modal 2 → Ticket creation
 
 #### /verify-override
 - **Description:** E-Board immediate verification override

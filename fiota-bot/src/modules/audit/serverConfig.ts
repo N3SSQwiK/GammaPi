@@ -29,14 +29,8 @@ import './requirements';  // audit module's own requirements
 // TYPES
 // ============================================================================
 
-export interface ExpectedChannel {
-    name: string;
-    type: ChannelType;
-    tags?: string[];
-    guidelines?: string;
-    defaultReaction?: string;
-    requireTag?: boolean;
-}
+// Re-export ChannelRequirement as ExpectedChannel for backward compatibility
+export type ExpectedChannel = ChannelRequirement;
 
 // ============================================================================
 // AGGREGATED GOLDEN STATE

@@ -1,24 +1,6 @@
-# Access Control Specification
+# Access Control Spec Delta: Init Command & Verification Updates
 
-## Purpose
-
-Define the verification and access control flows for the Gamma Pi Discord server, including server initialization, rules agreement, brother verification, and E-Board administrative functions.
-
-## Requirements
-
-### Requirement: Two-Step Access Control
-The system MUST distinguish between "Identity Verification" and "Server Access".
-
-#### Scenario: Rules Agreement Required First
-- **WHEN** a user joins the Discord server
-- **THEN** they see only `#rules-and-conduct` channel
-- **AND** must click `[✅ I Agree to the Code of Conduct]` button
-- **THEN** they receive `✅ Rules Accepted` role and can access `#welcome-gate`
-
-#### Scenario: Verification Success
-- **WHEN** a user passes the Dual-Voucher verification
-- **THEN** they receive their Identity Role (e.g., `🦁 ΓΠ Brother`)
-- **AND** gain full server access
+## ADDED Requirements
 
 ### Requirement: Server Initialization Command
 The system SHALL provide `/init` for complete server setup by the server owner.
@@ -43,10 +25,12 @@ The system SHALL provide `/init` for complete server setup by the server owner.
 #### Scenario: /init shows all chapters including hidden
 - **WHEN** server owner uses chapter autocomplete in `/init`
 - **THEN** ALL chapters are shown (including Omega and other hidden chapters)
+- **Note:** This differs from `/verify-start` which excludes hidden chapters
 
 #### Scenario: /init can register other users
 - **WHEN** server owner executes `/init chapter:... industry:... user:@OtherUser`
 - **THEN** the registration flow targets @OtherUser instead of the owner
+- **AND** owner still clicks "Light the Torch" and fills modals on behalf of target
 
 ### Requirement: Founding Brother Registration Flow
 The system SHALL provide a two-modal flow for registering founding brothers during /init.
@@ -55,8 +39,8 @@ The system SHALL provide a two-modal flow for registering founding brothers duri
 - **WHEN** owner clicks "🦁 Light the Torch" button
 - **THEN** system shows Modal 1 (Identity & Professional Info)
 
-#### Scenario: Init Modal 1 - Identity fields
-- **WHEN** Modal 1 is displayed for /init flow
+#### Scenario: Modal 1 - Identity fields
+- **WHEN** Modal 1 is displayed
 - **THEN** it contains:
   - First Name (required)
   - Last Name (required)
@@ -64,20 +48,22 @@ The system SHALL provide a two-modal flow for registering founding brothers duri
   - Initiation Year & Semester (required, placeholder: "2015 Spring")
   - Job Title (required)
 
-#### Scenario: Init Modal 1 submission
+#### Scenario: Modal 1 submission
 - **WHEN** owner submits Modal 1 with valid data
 - **THEN** system shows summary embed with "Continue to Step 2" button
+- **Note:** Discord does not allow chaining modals directly
 
-#### Scenario: Init Modal 2 - Contact fields
+#### Scenario: Modal 2 - Contact fields
 - **WHEN** owner clicks "Continue to Step 2" button
 - **THEN** system shows Modal 2 with:
   - Phone Number (required)
   - City (required)
 
-#### Scenario: Init Modal 2 submission creates founding brother
+#### Scenario: Modal 2 submission creates founding brother
 - **WHEN** owner submits Modal 2 with valid data
 - **THEN** system creates user record with status='BROTHER'
 - **AND** assigns 🦁 ΓΠ Brother role to target user
+- **AND** shows success embed: "Welcome to the Pride, Founding Lion!"
 
 ### Requirement: Rules Agreement Check Before Verification
 The system SHALL require users to accept the Code of Conduct before starting verification.
@@ -95,26 +81,28 @@ The system SHALL require users to accept the Code of Conduct before starting ver
 - **THEN** system automatically restores the `✅ Rules Accepted` role
 - **AND** allows verification to proceed
 
-### Requirement: Channel Permission Overwrites
+### Requirement: Channel Permission Overwrites in Golden State
 The system SHALL configure channel permissions as part of Golden State setup.
 
 #### Scenario: #welcome-gate permissions
-- **WHEN** `/init` creates #welcome-gate
+- **WHEN** `/init` or `/setup` creates #welcome-gate
 - **THEN** @everyone is denied ViewChannel
 - **AND** `✅ Rules Accepted` role is allowed ViewChannel and ReadMessageHistory
 
 #### Scenario: #verification-requests permissions
-- **WHEN** `/init` creates #verification-requests
+- **WHEN** `/init` or `/setup` creates #verification-requests
 - **THEN** @everyone is denied ViewChannel
 - **AND** `🦁 E-Board` role is allowed ViewChannel, ReadMessageHistory, SendMessages
 - **AND** `🦁 ΓΠ Brother` role is allowed ViewChannel, ReadMessageHistory
+
+## MODIFIED Requirements
 
 ### Requirement: Multi-Step Brother Verification Flow
 The system SHALL provide a multi-step verification process with autocomplete and two-modal flow.
 
 #### Scenario: User initiates brother verification
 - **WHEN** a user runs `/verify-start` command
-- **THEN** the system checks rules agreement first
+- **THEN** the system checks rules agreement first (see Rules Agreement Check)
 - **AND** shows autocomplete for `chapter` option (80+ chapters, hidden excluded)
 - **AND** shows autocomplete for `industry` option (50 industries)
 - **AND** validates selections against CHAPTERS and INDUSTRIES constants
@@ -152,45 +140,8 @@ The system SHALL provide a multi-step verification process with autocomplete and
   - Fuzzy matching with scoring algorithm
 - **AND** validates both vouchers are existing brothers (status='BROTHER')
 
-### Requirement: Named Voucher Approval System with 48-Hour Fallback
-The system SHALL allow named vouchers priority to approve, with fallback after 48 hours.
+## REMOVED Requirements
 
-#### Scenario: Within 48 hours - any brother can approve
-- **WHEN** a brother clicks Approve button on verification ticket
-- **AND** less than 48 hours have passed since ticket creation
-- **AND** approver has status='BROTHER'
-- **THEN** the system records approval
-- **IF** this is the first approval:
-  - Update embed to show "1/2 approvals"
-  - Reply: "✅ First approval recorded. One more needed."
-- **IF** this is the second approval:
-  - Update user status to 'BROTHER'
-  - Assign 🦁 ΓΠ Brother role
-  - Reply: "✅✅ Verified! {user} now has the Brother role."
-
-#### Scenario: After 48 hours - any brother can still approve
-- **WHEN** more than 48 hours have passed since ticket creation
-- **AND** any brother clicks Approve
-- **THEN** same approval logic applies (48hr is informational, not restrictive)
-
-#### Scenario: E-Board override for immediate verification
-- **WHEN** E-Board executes `/verify-override ticket_id`
-- **THEN** system immediately verifies the user
-- **AND** bypasses voucher approval requirement
-- **AND** logs override action
-
-### Requirement: E-Board Omega Chapter Assignment
-The system SHALL allow E-Board to assign brothers to Omega chapter (hidden from public).
-
-#### Scenario: E-Board assigns Omega chapter
-- **WHEN** E-Board executes `/chapter-assign user:@Brother chapter:Omega`
-- **THEN** validates executor has Administrator permission
-- **AND** updates user.chapter to 'omega'
-- **AND** logs action: "{admin} assigned {user} to Omega chapter"
-- **AND** replies: "✅ {user}'s chapter has been updated to Omega"
-
-#### Scenario: Omega hidden from public dropdown
-- **WHEN** `/verify-start` command shows chapter autocomplete
-- **THEN** CHAPTERS with hidden=true are excluded
-- **WHEN** `/chapter-assign` or `/init` command shows chapter autocomplete
-- **THEN** ALL chapters including hidden ones are shown
+### Requirement: Server Bootstrap Flow
+**Reason:** Functionality consolidated into `/init` command.
+**Migration:** Use `/init` instead of `/bootstrap`.

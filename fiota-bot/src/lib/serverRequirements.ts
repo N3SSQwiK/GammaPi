@@ -14,7 +14,17 @@
  * The serverConfig.ts then aggregates all registered requirements.
  */
 
-import { ChannelType } from 'discord.js';
+import { ChannelType, PermissionFlagsBits } from 'discord.js';
+
+/**
+ * Permission overwrite for a channel
+ * roleOrMember: Role name (string) or '@everyone' for the everyone role
+ */
+export interface PermissionOverwrite {
+    roleOrMember: string;           // Role name or '@everyone'
+    allow?: bigint[];               // PermissionFlagsBits to allow
+    deny?: bigint[];                // PermissionFlagsBits to deny
+}
 
 export interface ChannelRequirement {
     name: string;
@@ -23,6 +33,7 @@ export interface ChannelRequirement {
     guidelines?: string;
     defaultReaction?: string;
     requireTag?: boolean;
+    permissionOverwrites?: PermissionOverwrite[];  // Channel-specific permissions
 }
 
 export interface FeatureRequirements {

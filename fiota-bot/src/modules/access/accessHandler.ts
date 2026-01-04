@@ -7,7 +7,7 @@ import logger from '../../lib/logger';
 import { validateYearSemester, validatePhoneNumber, validateZipOrCity, validateName, normalizeName, normalizePhoneNumber } from '../../lib/validation';
 import { getChapterByValue } from '../../lib/constants';
 import { getDisplayName, formatChapterName } from '../../lib/displayNameBuilder';
-import { pendingVerifyStarts, pendingVerifications } from '../../lib/verificationState';
+import { pendingVerifyStarts, pendingVerifications, pendingInitRegistrations, pendingInitModal1Data } from '../../lib/verificationState';
 
 export async function handleAccessButton(interaction: Interaction) {
     if (!interaction.isButton()) return;
@@ -15,6 +15,32 @@ export async function handleAccessButton(interaction: Interaction) {
     try {
         // Main verification gate button - shows choice screen
         if (interaction.customId === 'verify_gate_start') {
+            const userId = interaction.user.id;
+            const guild = interaction.guild;
+
+            // Check: Must have agreed to rules first
+            if (guild) {
+                const member = await guild.members.fetch(userId);
+                const hasRulesRole = member.roles.cache.some(r => r.name === '✅ Rules Accepted');
+                const hasAgreedInDb = userRepository.hasAgreedToRules(userId);
+
+                if (!hasRulesRole && !hasAgreedInDb) {
+                    await interaction.reply({
+                        content: '📜 **You must agree to the Code of Conduct first.**\n\nPlease visit `#rules-and-conduct` and click "✅ I Agree" before starting verification.',
+                        ephemeral: true
+                    });
+                    return;
+                }
+
+                // Edge case: Has DB record but lost role (rejoined server) - restore role
+                if (hasAgreedInDb && !hasRulesRole) {
+                    const rulesRole = guild.roles.cache.find(r => r.name === '✅ Rules Accepted');
+                    if (rulesRole) {
+                        await member.roles.add(rulesRole);
+                    }
+                }
+            }
+
             const embed = new EmbedBuilder()
                 .setColor('#B41528')
                 .setTitle('Choose Your Verification Path')
@@ -438,8 +464,8 @@ async function handleModal1(interaction: ModalSubmitInteraction) {
     if (!validateName(lastName, true)) {
         errors.push('Last name is required (letters only, max 50 characters)');
     }
-    if (donName && !validateName(donName, false)) {
-        errors.push('Don name must be letters only, max 50 characters');
+    if (!validateName(donName, true)) {
+        errors.push('Don name is required (letters only, max 50 characters)');
     }
 
     const yearSemester = validateYearSemester(yearSemesterInput);
@@ -910,5 +936,432 @@ export async function handleBootstrapModal(interaction: ModalSubmitInteraction) 
                 ephemeral: true
             });
         }
+    }
+}
+
+// ============================================================================
+// /init Command Handlers (Two-Modal Flow for Founding Brothers)
+// ============================================================================
+
+/**
+ * Handle "Light the Torch" button click from /init command.
+ * Shows Modal 1 (Identity & Professional Info).
+ */
+export async function handleInitRegisterButton(interaction: Interaction) {
+    if (!interaction.isButton()) return;
+
+    const customId = interaction.customId;
+    if (!customId.startsWith('init_register_')) return;
+
+    // Parse customId: init_register_{invokerId}_{targetId}
+    const parts = customId.replace('init_register_', '').split('_');
+    const expectedInvokerId = parts[0];
+    const targetId = parts[1] || parts[0];
+
+    const invokerId = interaction.user.id;
+    const guild = interaction.guild;
+
+    // Security check: only the invoker can click this button
+    if (expectedInvokerId !== invokerId) {
+        await interaction.reply({
+            content: 'This button is not for you, hermano.',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // Verify guild and owner status
+    if (!guild || guild.ownerId !== invokerId) {
+        await interaction.reply({
+            content: '🔒 Only the server owner can complete this registration.',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // Retrieve stored data from /init command
+    const pendingData = pendingInitRegistrations.get(invokerId);
+    if (!pendingData) {
+        await interaction.reply({
+            content: '⏳ Session expired. Please run `/init` again.',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // Check threshold again (race condition protection)
+    const brotherCount = userRepository.countBrothers();
+    if (brotherCount >= 2) {
+        await interaction.reply({
+            content: '⚠️ The pride already has 2+ brothers. Use `/verify-start` for new verifications.',
+            ephemeral: true
+        });
+        pendingInitRegistrations.delete(invokerId);
+        return;
+    }
+
+    // Fetch target user info for modal title
+    const isSelf = targetId === invokerId;
+    let targetUsername = 'Brother';
+    if (!isSelf) {
+        try {
+            const targetMember = await guild.members.fetch(targetId);
+            targetUsername = targetMember.user.username;
+        } catch {
+            targetUsername = 'Brother';
+        }
+    }
+
+    // Show Modal 1: Identity & Professional Info
+    const modal = new ModalBuilder()
+        .setCustomId(`init_modal_1_${invokerId}_${targetId}`)
+        .setTitle(isSelf ? '🦁 Founding Lion - Step 1' : `🦁 Register ${targetUsername} - Step 1`);
+
+    const firstNameInput = new TextInputBuilder()
+        .setCustomId('first_name')
+        .setLabel('First Name')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(50)
+        .setPlaceholder('John');
+
+    const lastNameInput = new TextInputBuilder()
+        .setCustomId('last_name')
+        .setLabel('Last Name')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(50)
+        .setPlaceholder('Smith');
+
+    const donNameInput = new TextInputBuilder()
+        .setCustomId('don_name')
+        .setLabel('Don Name (your brother name)')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(50)
+        .setPlaceholder('Phoenix');
+
+    const yearSemesterInput = new TextInputBuilder()
+        .setCustomId('year_semester')
+        .setLabel('Initiation Year & Semester')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setPlaceholder('2015 Spring');
+
+    const jobTitleInput = new TextInputBuilder()
+        .setCustomId('job_title')
+        .setLabel('Job Title')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(100)
+        .setPlaceholder('Software Engineer');
+
+    modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(firstNameInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(lastNameInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(donNameInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(yearSemesterInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(jobTitleInput)
+    );
+
+    logger.info(`[Init] ${interaction.user.tag} clicked "Light the Torch" - showing Modal 1`);
+    await interaction.showModal(modal);
+}
+
+/**
+ * Handle Modal 1 submission from /init flow.
+ * Validates identity info and shows "Continue" button for Modal 2.
+ */
+export async function handleInitModal1(interaction: ModalSubmitInteraction) {
+    const customId = interaction.customId;
+    const invokerId = interaction.user.id;
+
+    // Parse customId: init_modal_1_{invokerId}_{targetId}
+    const parts = customId.replace('init_modal_1_', '').split('_');
+    const expectedInvokerId = parts[0];
+    const targetId = parts[1] || parts[0];
+
+    // Security check
+    if (expectedInvokerId !== invokerId) {
+        await interaction.reply({ content: 'Session mismatch. Please try again.', ephemeral: true });
+        return;
+    }
+
+    const guild = interaction.guild;
+    if (!guild || guild.ownerId !== invokerId) {
+        await interaction.reply({ content: '🔒 Only the server owner can complete this.', ephemeral: true });
+        return;
+    }
+
+    // Retrieve stored data
+    const pendingData = pendingInitRegistrations.get(invokerId);
+    if (!pendingData) {
+        await interaction.reply({ content: '⏳ Session expired. Please run `/init` again.', ephemeral: true });
+        return;
+    }
+
+    // Get form values
+    const firstName = interaction.fields.getTextInputValue('first_name');
+    const lastName = interaction.fields.getTextInputValue('last_name');
+    const donName = interaction.fields.getTextInputValue('don_name');
+    const yearSemesterInput = interaction.fields.getTextInputValue('year_semester');
+    const jobTitle = interaction.fields.getTextInputValue('job_title');
+
+    // Validate inputs
+    const errors: string[] = [];
+
+    if (!validateName(firstName, true)) {
+        errors.push('First name is required (letters only, max 50 characters)');
+    }
+    if (!validateName(lastName, true)) {
+        errors.push('Last name is required (letters only, max 50 characters)');
+    }
+    if (!validateName(donName, true)) {
+        errors.push('Don name is required (letters only, max 50 characters)');
+    }
+
+    const yearSemester = validateYearSemester(yearSemesterInput);
+    if (!yearSemester) {
+        errors.push('Year & Semester must be format "YYYY Spring" or "YYYY Fall" (e.g., 2015 Spring)');
+    }
+
+    if (!jobTitle || jobTitle.trim().length < 2) {
+        errors.push('Job title is required (at least 2 characters)');
+    }
+
+    if (errors.length > 0) {
+        await interaction.reply({
+            content: `**Validation Errors:**\n${errors.map(e => `• ${e}`).join('\n')}\n\nPlease try again.`,
+            ephemeral: true
+        });
+        return;
+    }
+
+    // Store Modal 1 data for Modal 2
+    pendingInitModal1Data.set(invokerId, {
+        chapter: pendingData.chapter,
+        industry: pendingData.industry,
+        targetId: targetId,
+        firstName: normalizeName(firstName),
+        lastName: normalizeName(lastName),
+        donName: normalizeName(donName),
+        yearSemester: yearSemester!,
+        jobTitle: jobTitle.trim(),
+        expiresAt: Date.now() + 15 * 60 * 1000
+    });
+
+    // Clean up the initial registration data
+    pendingInitRegistrations.delete(invokerId);
+
+    const isSelf = targetId === invokerId;
+    const displayName = `Don ${normalizeName(donName)} (${normalizeName(firstName)} ${normalizeName(lastName)})`;
+
+    // Show summary and "Continue" button
+    const embed = new EmbedBuilder()
+        .setTitle('🦁 Step 1 Complete')
+        .setColor('#B41528')
+        .setDescription(
+            `**Name:** ${displayName}\n` +
+            `**Initiation:** ${yearSemester!.year} ${yearSemester!.semester}\n` +
+            `**Job Title:** ${jobTitle.trim()}\n\n` +
+            `Click below to complete ${isSelf ? 'your' : 'the'} registration with contact info.`
+        );
+
+    const continueButton = new ButtonBuilder()
+        .setCustomId(`init_continue_${invokerId}_${targetId}`)
+        .setLabel('Continue to Step 2')
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji('➡️');
+
+    const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
+
+    await interaction.reply({
+        embeds: [embed],
+        components: [buttonRow],
+        ephemeral: true
+    });
+
+    logger.info(`[Init] Modal 1 complete for ${displayName}. Awaiting Modal 2.`);
+}
+
+/**
+ * Handle "Continue to Step 2" button click.
+ * Shows Modal 2 (Contact Info).
+ */
+export async function handleInitContinueButton(interaction: Interaction) {
+    if (!interaction.isButton()) return;
+
+    const customId = interaction.customId;
+    if (!customId.startsWith('init_continue_')) return;
+
+    // Parse customId: init_continue_{invokerId}_{targetId}
+    const parts = customId.replace('init_continue_', '').split('_');
+    const expectedInvokerId = parts[0];
+    const targetId = parts[1] || parts[0];
+
+    const invokerId = interaction.user.id;
+
+    // Security check
+    if (expectedInvokerId !== invokerId) {
+        await interaction.reply({ content: 'This button is not for you, hermano.', ephemeral: true });
+        return;
+    }
+
+    // Retrieve Modal 1 data
+    const modal1Data = pendingInitModal1Data.get(invokerId);
+    if (!modal1Data) {
+        await interaction.reply({ content: '⏳ Session expired. Please run `/init` again.', ephemeral: true });
+        return;
+    }
+
+    const isSelf = targetId === invokerId;
+
+    // Show Modal 2: Contact Info
+    const modal = new ModalBuilder()
+        .setCustomId(`init_modal_2_${invokerId}_${targetId}`)
+        .setTitle(isSelf ? '🦁 Founding Lion - Step 2' : '🦁 Registration - Step 2');
+
+    const phoneInput = new TextInputBuilder()
+        .setCustomId('phone_number')
+        .setLabel('Phone Number')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setPlaceholder('(555) 123-4567');
+
+    const cityInput = new TextInputBuilder()
+        .setCustomId('city')
+        .setLabel('City')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(100)
+        .setPlaceholder('New York');
+
+    modal.addComponents(
+        new ActionRowBuilder<TextInputBuilder>().addComponents(phoneInput),
+        new ActionRowBuilder<TextInputBuilder>().addComponents(cityInput)
+    );
+
+    await interaction.showModal(modal);
+}
+
+/**
+ * Handle Modal 2 submission from /init flow.
+ * Creates the user record and assigns the Brother role.
+ */
+export async function handleInitModal2(interaction: ModalSubmitInteraction) {
+    const customId = interaction.customId;
+    const invokerId = interaction.user.id;
+
+    // Parse customId: init_modal_2_{invokerId}_{targetId}
+    const parts = customId.replace('init_modal_2_', '').split('_');
+    const expectedInvokerId = parts[0];
+    const targetId = parts[1] || parts[0];
+
+    // Security check
+    if (expectedInvokerId !== invokerId) {
+        await interaction.reply({ content: 'Session mismatch. Please try again.', ephemeral: true });
+        return;
+    }
+
+    const guild = interaction.guild;
+    if (!guild || guild.ownerId !== invokerId) {
+        await interaction.reply({ content: '🔒 Only the server owner can complete this.', ephemeral: true });
+        return;
+    }
+
+    // Retrieve Modal 1 data
+    const modal1Data = pendingInitModal1Data.get(invokerId);
+    if (!modal1Data) {
+        await interaction.reply({ content: '⏳ Session expired. Please run `/init` again.', ephemeral: true });
+        return;
+    }
+
+    // Get Modal 2 values
+    const phoneNumber = interaction.fields.getTextInputValue('phone_number');
+    const city = interaction.fields.getTextInputValue('city');
+
+    // Validate
+    const errors: string[] = [];
+
+    if (!validatePhoneNumber(phoneNumber)) {
+        errors.push('Phone number must contain at least 10 digits');
+    }
+
+    if (!city || city.trim().length < 2) {
+        errors.push('City is required (at least 2 characters)');
+    }
+
+    if (errors.length > 0) {
+        await interaction.reply({
+            content: `**Validation Errors:**\n${errors.map(e => `• ${e}`).join('\n')}\n\nPlease try again.`,
+            ephemeral: true
+        });
+        return;
+    }
+
+    // Create user record
+    const isSelf = targetId === invokerId;
+
+    try {
+        userRepository.upsert({
+            discord_id: targetId,
+            first_name: modal1Data.firstName,
+            last_name: modal1Data.lastName,
+            don_name: modal1Data.donName,
+            chapter: modal1Data.chapter,
+            initiation_year: modal1Data.yearSemester.year,
+            initiation_semester: modal1Data.yearSemester.semester,
+            industry: modal1Data.industry,
+            job_title: modal1Data.jobTitle,
+            phone_number: normalizePhoneNumber(phoneNumber),
+            city: city.trim(),
+            status: 'BROTHER'
+        });
+
+        // Assign brother role
+        const targetMember = await guild.members.fetch(targetId);
+        const brotherRole = guild.roles.cache.find(r => r.name === '🦁 ΓΠ Brother');
+
+        if (brotherRole) {
+            await targetMember.roles.add(brotherRole);
+        } else {
+            logger.warn('[Init] Brother role not found after setup - this should not happen');
+        }
+
+        // Clean up state
+        pendingInitModal1Data.delete(invokerId);
+
+        // Build success message
+        const displayName = `Don ${modal1Data.donName} (${modal1Data.firstName} ${modal1Data.lastName})`;
+        const chapterInfo = getChapterByValue(modal1Data.chapter);
+        const chapterLabel = chapterInfo?.label || modal1Data.chapter;
+
+        const successEmbed = new EmbedBuilder()
+            .setTitle('🦁 Welcome to the Pride, Founding Lion!')
+            .setColor('#B41528')
+            .setDescription(
+                `**${displayName}** has been registered as a founding brother.\n\n` +
+                `**Chapter:** ${chapterLabel}\n` +
+                `**Initiation:** ${modal1Data.yearSemester.year} ${modal1Data.yearSemester.semester}\n` +
+                `**Industry:** ${modal1Data.industry}\n` +
+                `**Job Title:** ${modal1Data.jobTitle}\n` +
+                `**City:** ${city.trim()}\n\n` +
+                `${isSelf ? 'You' : targetMember.user.username} can now approve verification requests from other brothers.`
+            )
+            .setFooter({ text: 'The torch is lit. Lead with excellence.' });
+
+        await interaction.reply({
+            embeds: [successEmbed],
+            ephemeral: true
+        });
+
+        logger.info(`[Init] Founding brother registered: ${displayName} (${targetId}) - ${chapterLabel}`);
+
+    } catch (error) {
+        logger.error('[Init] Error creating user:', error);
+        await interaction.reply({
+            content: 'An error occurred during registration. Please try again.',
+            ephemeral: true
+        });
     }
 }
