@@ -3,9 +3,7 @@
 ## Purpose
 
 Define the verification and access control flows for the Gamma Pi Discord server, including server initialization, rules agreement, brother verification, and E-Board administrative functions.
-
 ## Requirements
-
 ### Requirement: Two-Step Access Control
 The system MUST distinguish between "Identity Verification" and "Server Access".
 
@@ -110,47 +108,53 @@ The system SHALL configure channel permissions as part of Golden State setup.
 - **AND** `🦁 ΓΠ Brother` role is allowed ViewChannel, ReadMessageHistory
 
 ### Requirement: Multi-Step Brother Verification Flow
-The system SHALL provide a multi-step verification process with autocomplete and two-modal flow.
+The system SHALL provide a multi-step verification process using slash command autocomplete and two-modal flow.
+
+**[This replaces the single-modal verification with multi-step interaction]**
+
+#### Implementation Details
+Due to Discord API limitations:
+- **Autocomplete** used instead of StringSelectMenu (Discord limits select menus to 25 options; we have 80+ chapters and 50 industries)
+- **Two modals** with button between (Discord doesn't allow chaining modals directly via showModal)
+- **No middle_name field** (removed per user request for simplicity)
+- **Name-based voucher search** instead of @mentions (better UX for users who don't know Discord handles)
 
 #### Scenario: User initiates brother verification
-- **WHEN** a user runs `/verify-start` command
-- **THEN** the system checks rules agreement first
-- **AND** shows autocomplete for `chapter` option (80+ chapters, hidden excluded)
-- **AND** shows autocomplete for `industry` option (50 industries)
-- **AND** validates selections against CHAPTERS and INDUSTRIES constants
+- **WHEN** a user runs `/verify-start chapter:<autocomplete> industry:<autocomplete>`
+- **THEN** the system validates chapter exists in CHAPTERS (hidden=false)
+- **AND** validates industry exists in INDUSTRIES
+- **AND** stores selections in pendingVerifications Map
 - **AND** presents Modal 1 (Identity Information)
 
-#### Scenario: Modal 1 - Identity Information
-- **WHEN** user completes autocomplete selections
-- **THEN** system shows Modal 1 with fields:
+#### Scenario: Modal 1 - Identity fields
+- **WHEN** user sees Modal 1 (verify_modal_1)
+- **THEN** modal contains:
   - First Name (required)
   - Last Name (required)
-  - Don Name (required)
+  - Don Name (required, placeholder: "Phoenix - without 'Don' prefix")
   - Year & Semester (required, placeholder: "2015 Spring")
   - Job Title (required)
-- **AND** validates year/semester format on submission
 
-#### Scenario: Modal 1 submission shows continuation button
-- **WHEN** user submits Modal 1 successfully
-- **THEN** system replies with ephemeral message showing collected info
-- **AND** includes "Continue to Step 2" button
-- **Note:** Discord does not allow chaining modals directly; button is required
+#### Scenario: Modal 1 submission
+- **WHEN** user submits Modal 1
+- **THEN** system validates year/semester format
+- **IF** invalid: reply with error message
+- **IF** valid: reply with confirmation and "Continue to Step 2" button
 
-#### Scenario: Modal 2 - Contact and Vouchers
+#### Scenario: Modal 2 - Contact and voucher fields
 - **WHEN** user clicks "Continue to Step 2" button
-- **THEN** system shows Modal 2 with fields:
+- **THEN** system shows Modal 2 (verify_modal_2) with:
   - Phone Number (required, placeholder: "(555) 123-4567")
   - Zip Code or City (required, placeholder: "10001 or Toronto, Canada")
   - Voucher 1 Name (required, placeholder: "Don Phoenix or John Smith")
   - Voucher 2 Name (required, placeholder: "Don Eagle or Jane Doe")
 
-#### Scenario: Voucher name search
-- **WHEN** user enters voucher names in Modal 2
-- **THEN** system searches brothers by:
-  - don_name (exact or partial match)
-  - first_name + last_name combination
-  - Fuzzy matching with scoring algorithm
-- **AND** validates both vouchers are existing brothers (status='BROTHER')
+#### Scenario: Voucher name validation
+- **WHEN** user enters voucher names
+- **THEN** system searches brothers by don_name, first_name, last_name
+- **AND** uses fuzzy matching with scoring algorithm
+- **AND** validates both are existing brothers (status='BROTHER')
+- **IF** no match found: reply with error showing similar names if available
 
 ### Requirement: Named Voucher Approval System with 48-Hour Fallback
 The system SHALL allow named vouchers priority to approve, with fallback after 48 hours.
@@ -174,10 +178,12 @@ The system SHALL allow named vouchers priority to approve, with fallback after 4
 - **THEN** same approval logic applies (48hr is informational, not restrictive)
 
 #### Scenario: E-Board override for immediate verification
-- **WHEN** E-Board executes `/verify-override ticket_id`
-- **THEN** system immediately verifies the user
-- **AND** bypasses voucher approval requirement
-- **AND** logs override action
+- **WHEN** E-Board executes `/verify-override ticket_id:<string>`
+- **THEN** validate executor has Administrator permission
+- **AND** set ticket status to VERIFIED
+- **AND** set user status to BROTHER
+- **AND** assign 🦁 ΓΠ Brother role
+- **AND** log override action
 
 ### Requirement: E-Board Omega Chapter Assignment
 The system SHALL allow E-Board to assign brothers to Omega chapter (hidden from public).
@@ -185,6 +191,7 @@ The system SHALL allow E-Board to assign brothers to Omega chapter (hidden from 
 #### Scenario: E-Board assigns Omega chapter
 - **WHEN** E-Board executes `/chapter-assign user:@Brother chapter:Omega`
 - **THEN** validates executor has Administrator permission
+- **AND** validates user exists with status='BROTHER'
 - **AND** updates user.chapter to 'omega'
 - **AND** logs action: "{admin} assigned {user} to Omega chapter"
 - **AND** replies: "✅ {user}'s chapter has been updated to Omega"
@@ -194,3 +201,23 @@ The system SHALL allow E-Board to assign brothers to Omega chapter (hidden from 
 - **THEN** CHAPTERS with hidden=true are excluded
 - **WHEN** `/chapter-assign` or `/init` command shows chapter autocomplete
 - **THEN** ALL chapters including hidden ones are shown
+
+### Requirement: Verification Ticket Embed Format
+The system SHALL display comprehensive ticket information.
+
+#### Scenario: Ticket embed fields
+- **WHEN** ticket is posted to verification channel
+- **THEN** embed includes:
+  - Title: "🦁 New Verification Request"
+  - User: Discord mention
+  - Name: first_name last_name (with don_name if set)
+  - Chapter: chapter label
+  - Initiation: year semester
+  - Named Vouchers: voucher 1 name, voucher 2 name
+  - Industry: industry
+  - Job Title: job_title
+  - Location: zip_code or city
+  - Phone: phone_number
+  - Footer: "Vouchers may take up to 48 hours. After 48hrs, any brother can approve."
+  - Approve button with customId: approve_ticket_{ticketId}
+

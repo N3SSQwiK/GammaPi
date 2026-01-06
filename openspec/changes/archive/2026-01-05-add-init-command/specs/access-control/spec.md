@@ -140,8 +140,3 @@ The system SHALL provide a multi-step verification process with autocomplete and
   - Fuzzy matching with scoring algorithm
 - **AND** validates both vouchers are existing brothers (status='BROTHER')
 
-## REMOVED Requirements
-
-### Requirement: Server Bootstrap Flow
-**Reason:** Functionality consolidated into `/init` command.
-**Migration:** Use `/init` instead of `/bootstrap`.

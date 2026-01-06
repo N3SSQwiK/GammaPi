@@ -58,12 +58,3 @@ The system SHALL support permission overwrites in channel configuration.
 - **AND** applies allow/deny permission bits
 - **AND** logs permission configuration
 
-## REMOVED Requirements
-
-### /setup Command
-**Reason:** Functionality consolidated into `/init` command.
-**Migration:** Use `/init` for server initialization.
-
-### /bootstrap Command
-**Reason:** Functionality consolidated into `/init` command.
-**Migration:** Use `/init` for founding brother registration.
