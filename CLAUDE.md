@@ -77,7 +77,7 @@ fiota-bot/
 - **Professional Rolodex**: Searchable database by industry, job title, location (`/find`)
 - **Pipeline Tracking**: Candidate and Interest status management (`/pipeline`)
 - **Server Audit**: Weekly automated validation of roles, channels, permissions (`/audit`)
-- **Golden State Enforcement**: Infrastructure-as-code via `serverConfig.ts` with `/setup` command
+- **Golden State Enforcement**: Infrastructure-as-code via `serverConfig.ts` with `/init` command
 - **Geographic Intelligence**: Auto-derive city/state/timezone from zip codes
 - **Don Name Support**: Brothers can set a "don name" (brother name) displayed as "Don Phoenix" in searches and profiles via `/profile-update`
 
@@ -103,13 +103,14 @@ npm start             # Start bot (production: pm2 start dist/index.js)
 - `src/lib/repositories/` - All database access MUST go through repository pattern (UserRepository, VoteRepository, AttendanceRepository, TicketRepository)
 - `src/deploy-commands.ts` - MUST run `npm run deploy` after any changes to slash command definitions
 
-### Verification Commands
-- `/verify` - Admin command to post the verification gate embed in a channel
+### Initialization & Verification Commands
+- `/init` - Server owner command for complete server setup: creates roles/channels, posts embeds, registers founding brothers (auto-disables after 2 brothers exist)
+- `/verify` - Admin command to re-post the verification gate embed (repair command)
+- `/rules` - Admin command to re-post the Code of Conduct embed (repair command)
 - `/verify-start` - User command to begin verification (autocomplete for chapter/industry)
 - `/verify-override` - E-Board command to override a verification ticket immediately
 - `/chapter-assign` - E-Board command to assign a brother to a chapter (including hidden Omega)
 - `/profile-update` - User command to update profile info (don name, phone, job title, city)
-- `/bootstrap` - Server owner command to seed initial brothers on fresh install (auto-disables after 2 brothers exist)
 
 ### Networking Commands
 - `/find` - Search brothers by industry, job title, or location
@@ -190,7 +191,9 @@ This project uses spec-driven development:
 
 ## Critical Documentation Files
 
-- **FiotaBot_Operations_Manual.md** - Unified operations guide (setup, daily ops, maintenance, security)
+- **Gamma-Pi_Discord_Server_SOP.md** - Unified Standard Operating Procedures:
+  - Part 1-3: Brother's Field Guide, Forum Guidelines, Permission Standards
+  - Part 4-6: Bot Administration, System Maintenance, Advanced Administration
 - **GEMINI.md** - Comprehensive overview (build instructions, architecture)
 - **GammaPi_Discord_Migration_Report.md** - Strategic migration plan
 - **FiotaBot_Spec.md** - Technical specification and schema
@@ -233,8 +236,7 @@ Before deploying FiotaBot changes:
    ```
 2. Import your requirements in `src/modules/audit/serverConfig.ts`
 3. Run `npm run build` to compile
-4. Test with `/setup` in Discord (creates missing roles/channels)
-5. Validate with `/audit`
+4. Test with `/init` in Discord (creates missing roles/channels) or validate with `/audit`
 
 **Add database fields:**
 1. Update repository in `src/lib/repositories/`

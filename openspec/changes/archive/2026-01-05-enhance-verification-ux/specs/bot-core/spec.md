@@ -90,35 +90,31 @@ The system SHALL provide autocomplete search functions in constants.ts.
 - **isValidChapter(value)** → boolean
 - **isValidIndustry(value)** → boolean
 
-### Requirement: New Slash Commands
+### Requirement: Verification Slash Commands
+The system SHALL provide slash commands for the enhanced verification flow.
 
-#### /verify-start
-- **Description:** Start brother verification process
-- **Options:**
-  - chapter (string, required, autocomplete)
-  - industry (string, required, autocomplete)
-- **Flow:** Validate → Modal 1 → Button → Modal 2 → Create ticket
+#### Scenario: /verify-start command
+- **WHEN** user runs `/verify-start chapter:<autocomplete> industry:<autocomplete>`
+- **THEN** system validates chapter and industry
+- **AND** stores selections in pendingVerifications Map
+- **AND** presents Modal 1 (Identity Information)
 - **Note:** Uses two modals because Discord doesn't allow chaining modals
 
-#### /verify-override
-- **Description:** E-Board: Override a verification ticket
-- **Permission:** Administrator (DefaultMemberPermissions.Administrator)
-- **Options:**
-  - ticket_id (string, required)
-- **Action:** Immediately verify without voucher approvals
+#### Scenario: /verify-override command
+- **WHEN** E-Board runs `/verify-override ticket_id:<string>`
+- **AND** executor has Administrator permission
+- **THEN** system immediately verifies without voucher approvals
 
-#### /chapter-assign
-- **Description:** E-Board: Assign chapter to brother
-- **Permission:** Administrator
-- **Options:**
-  - user (User, required)
-  - chapter (string, required, autocomplete with ALL chapters)
-- **Action:** Update user.chapter in database
+#### Scenario: /chapter-assign command
+- **WHEN** E-Board runs `/chapter-assign user:<User> chapter:<autocomplete>`
+- **AND** executor has Administrator permission
+- **THEN** system updates user.chapter in database
+- **Note:** Autocomplete includes ALL chapters (including hidden Omega)
 
-#### /profile-update
-- **Description:** Update your profile information
-- **Action:** Show modal with current values for don_name, phone_number, job_title, city
-- **Restriction:** Only works for users already in database
+#### Scenario: /profile-update command
+- **WHEN** existing user runs `/profile-update`
+- **THEN** system shows modal with current values for don_name, phone_number, job_title, city
+- **AND** user can update their profile information
 
 ### Requirement: Modal Handlers
 The system SHALL handle verification modals in accessHandler.ts.

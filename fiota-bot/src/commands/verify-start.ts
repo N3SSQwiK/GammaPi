@@ -9,6 +9,7 @@ import {
 } from 'discord.js';
 import { searchChapters, searchIndustries, getChapterByValue, isValidIndustry } from '../lib/constants';
 import { pendingVerifyStarts } from '../lib/verificationState';
+import { userRepository } from '../lib/repositories/userRepository';
 
 export default {
     data: new SlashCommandBuilder()
@@ -53,6 +54,32 @@ export default {
     },
 
     async execute(interaction: ChatInputCommandInteraction) {
+        const userId = interaction.user.id;
+        const guild = interaction.guild;
+
+        // Check 1: Must have agreed to rules first
+        if (guild) {
+            const member = await guild.members.fetch(userId);
+            const hasRulesRole = member.roles.cache.some(r => r.name === '✅ Rules Accepted');
+            const hasAgreedInDb = userRepository.hasAgreedToRules(userId);
+
+            if (!hasRulesRole && !hasAgreedInDb) {
+                await interaction.reply({
+                    content: '📜 **You must agree to the Code of Conduct first.**\n\nPlease visit `#rules-and-conduct` and click "✅ I Agree" before starting verification.',
+                    ephemeral: true
+                });
+                return;
+            }
+
+            // Edge case: Has DB record but lost role (rejoined server) - restore role
+            if (hasAgreedInDb && !hasRulesRole) {
+                const rulesRole = guild.roles.cache.find(r => r.name === '✅ Rules Accepted');
+                if (rulesRole) {
+                    await member.roles.add(rulesRole);
+                }
+            }
+        }
+
         const chapterValue = interaction.options.getString('chapter', true);
         const industryValue = interaction.options.getString('industry', true);
 
@@ -85,7 +112,6 @@ export default {
         }
 
         // Store chapter and industry in server-side state (not in customId to avoid truncation)
-        const userId = interaction.user.id;
         pendingVerifyStarts.set(userId, {
             chapter: chapterValue,
             industry: industryValue,
@@ -116,9 +142,9 @@ export default {
 
         const donNameInput = new TextInputBuilder()
             .setCustomId('don_name')
-            .setLabel('Don Name (your brother name, optional)')
+            .setLabel('Don Name (your brother name)')
             .setStyle(TextInputStyle.Short)
-            .setRequired(false)
+            .setRequired(true)
             .setMaxLength(50)
             .setPlaceholder('Phoenix');
 

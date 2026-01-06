@@ -42,20 +42,14 @@
 - [x] 2.7 Test migration on development database with sample data
 - [ ] 2.8 Create rollback script in case of migration failure
 
-## 3. Data Migration & Backfill
-- [ ] 3.1 Create backfill script: `scripts/backfill_user_data.ts`
-- [ ] 3.2 Parse existing real_name into components:
-  - [ ] Split on spaces: "John Michael Smith" → first="John", middle="Michael", last="Smith"
-  - [ ] Handle edge cases: single name, hyphenated names, suffixes (Jr, Sr, III)
-  - [ ] Log ambiguous cases for manual E-Board review
-- [ ] 3.3 Map existing free-text industries to standardized list:
-  - [ ] Create mapping: "Tech / Software Engineer" → "Technology / Software"
-  - [ ] "Finance" → "Finance / Banking"
-  - [ ] Unmapped values → "Other", log for E-Board categorization
-- [ ] 3.4 Derive city from existing zip_code for US brothers (use existing zipToLocation logic)
-- [ ] 3.5 Set country='United States' for all existing brothers (default assumption)
-- [ ] 3.6 Run backfill script, generate report of manual cleanup needed
-- [ ] 3.7 E-Board reviews and manually fixes ambiguous data
+## 3. Data Migration & Backfill [N/A - Fresh Install]
+- [N/A] 3.1 Create backfill script: `scripts/backfill_user_data.ts`
+- [N/A] 3.2 Parse existing real_name into components
+- [N/A] 3.3 Map existing free-text industries to standardized list
+- [N/A] 3.4 Derive city from existing zip_code for US brothers
+- [N/A] 3.5 Set country='United States' for all existing brothers
+- [N/A] 3.6 Run backfill script, generate report
+- [N/A] 3.7 E-Board reviews and manually fixes ambiguous data
 
 ## 4. Validation Utilities
 - [x] 4.1 Create `src/lib/validation.ts` module
@@ -78,7 +72,7 @@
   - [x] Changed from @mentions to name-based search per user request
   - [x] Search brothers by don_name, first_name, last_name with fuzzy matching
   - [x] Return matching brothers for user selection
-- [ ] 4.7 Write unit tests for all validation functions
+- [x] 4.7 Write unit tests for all validation functions (61 tests in validation.test.ts)
 
 ## 5. Display Name System
 - [x] 5.1 Create `src/lib/displayNameBuilder.ts` utility
@@ -94,7 +88,7 @@
   - [x] Format for Discord select menus: "Don Phoenix • Tech" (don name + industry)
   - [x] Or: "John Smith • Finance" (legal name if no don name)
   - [x] Include industry/chapter as context
-- [ ] 5.4 Write unit tests for display name logic
+- [x] 5.4 Write unit tests for display name logic (27 tests in displayNameBuilder.test.ts)
 
 ## 6. Multi-Step Verification Flow - Step 1: Chapter Selection
 - [x] 6.1 Update `src/commands/verify.ts`:
@@ -121,13 +115,13 @@
 - [x] 8.3 Modal 1 (verify_modal_1) fields:
   - [x] First Name (required)
   - [x] Last Name (required)
-  - [x] Don Name (optional, placeholder: "Phoenix - without 'Don' prefix")
+  - [x] Don Name (required, placeholder: "Phoenix - without 'Don' prefix")
   - [x] Year & Semester (required, placeholder: "2015 Spring")
   - [x] Job Title (required)
 - [x] 8.4 Modal 1 submission shows "Continue to Step 2" button
 - [x] 8.5 Modal 2 (verify_modal_2) fields:
   - [x] Phone Number (required)
-  - [x] City (required)
+  - [x] Zip Code or City (required, placeholder: "10001 or Toronto, Canada")
   - [x] Voucher 1 Name (required, placeholder: "Don Phoenix or John Smith")
   - [x] Voucher 2 Name (required, placeholder: "Don Eagle or Jane Doe")
 - [x] 8.6 Two-modal approach because Discord doesn't allow chaining modals directly
@@ -218,31 +212,17 @@
   - [x] Description: "Update your profile information (don name, phone, etc.)"
   - [x] Opens modal with optional fields: don_name, phone_number, job_title, city
   - [x] Pre-fills current values from database
-- [ ] 15.2 Send DM to existing brothers (one-time migration prompt):
-  - [ ] "We've upgraded our profiles! Please add your don name and phone: `/profile-update`"
-  - [ ] Track who has responded, gentle reminder after 1 week
+- [N/A] 15.2 Send DM to existing brothers [N/A - Fresh Install]
 
 ## 16. Integration & Testing
-- [ ] 16.1 Test multi-step flow end-to-end:
-  - [ ] Select chapter → select industry → fill modal → submit
-  - [ ] Verify all fields saved correctly in database
-- [ ] 16.2 Test validation error handling:
-  - [ ] Invalid year format ("2010" without semester)
-  - [ ] Invalid voucher (@mentions non-brother or only 1 mention)
-  - [ ] Invalid phone (letters, too short)
-  - [ ] Invalid zip (international format like "M5V 3A8")
-- [ ] 16.3 Test display name system:
-  - [ ] Brother with don_name shows correctly in `/find`
-  - [ ] Brother without don_name falls back to legal name
-- [ ] 16.4 Test E-Board Omega assignment:
-  - [ ] Omega not visible in public chapter dropdown
-  - [ ] E-Board can assign Omega via `/chapter-assign`
-- [ ] 16.5 Test international address handling:
-  - [ ] Enter city "Toronto" → prompts for country (or defaults to US)
-  - [ ] Enter 5-digit zip → auto-derives US city/state
-- [ ] 16.6 Test voucher approval with new system:
-  - [ ] Only listed vouchers can approve
-  - [ ] Both vouchers must approve before role assignment
+**See:** `fiota-bot/INTEGRATION_TEST_CHECKLIST.md` for detailed manual test procedures.
+
+- [ ] 16.1 Test /verify-start happy path (checklist created)
+- [ ] 16.2 Test /init founding brother flow (checklist created)
+- [ ] 16.3 Test voucher approval flow (checklist created)
+- [ ] 16.4 Test /verify-override E-Board bypass (checklist created)
+- [ ] 16.5 Test /chapter-assign Omega assignment (checklist created)
+- [ ] 16.6 Test error cases: invalid year, phone, voucher (checklist created)
 
 ## 17. Documentation
 - [x] 17.1 Update CLAUDE.md:
@@ -251,16 +231,8 @@
   - [x] Note Omega special handling
   - [x] Document new commands (/verify-start, /verify-override, /chapter-assign, /profile-update)
   - [x] Update database schema documentation
-- [ ] 17.2 Update GEMINI.md with same info
-- [ ] 17.3 Update Tech Chair Runbook:
-  - [ ] Chapter list update process (quarterly check of phiota.org)
-  - [ ] How to add new industries if requested
-  - [ ] Omega chapter assignment workflow
-  - [ ] Data migration troubleshooting
-- [ ] 17.4 Update FiotaBot_Implementation_SOP.md:
-  - [ ] New database schema
-  - [ ] Verification flow diagram
-- [ ] 17.5 Create user-facing guide:
-  - [ ] "How to Verify as a Brother" with screenshots of multi-step flow
-  - [ ] "How to Update Your Profile" for existing brothers
-- [ ] 17.6 Document industry standardization mapping (old → new values)
+- [x] 17.2 Update GEMINI.md with same info (updated to mirror CLAUDE.md)
+- [x] 17.3 Update Tech Chair Runbook (now in Gamma-Pi_Discord_Server_SOP.md Part 4-6)
+- [x] 17.4 Update SOP with verification flow (now in Gamma-Pi_Discord_Server_SOP.md Part 1)
+- [x] 17.5 Create user-facing guide (now in Gamma-Pi_Discord_Server_SOP.md Section 1.1-1.2)
+- [N/A] 17.6 Document industry standardization mapping [N/A - Fresh Install]
