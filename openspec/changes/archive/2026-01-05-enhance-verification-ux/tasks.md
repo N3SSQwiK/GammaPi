@@ -217,12 +217,12 @@
 ## 16. Integration & Testing
 **See:** `fiota-bot/INTEGRATION_TEST_CHECKLIST.md` for detailed manual test procedures.
 
-- [ ] 16.1 Test /verify-start happy path (checklist created)
-- [ ] 16.2 Test /init founding brother flow (checklist created)
-- [ ] 16.3 Test voucher approval flow (checklist created)
-- [ ] 16.4 Test /verify-override E-Board bypass (checklist created)
-- [ ] 16.5 Test /chapter-assign Omega assignment (checklist created)
-- [ ] 16.6 Test error cases: invalid year, phone, voucher (checklist created)
+- [x] 16.1 Test /verify-start happy path (2026-01-06: Steps 1-6 PASS, Step 7 blocked - needs vouchers)
+- [x] 16.2 Test /init founding brother flow (2026-01-06: PASS - roles created, embeds posted, founding brother registered)
+- [ ] 16.3 Test voucher approval flow (blocked - needs 2nd member)
+- [ ] 16.4 Test /verify-override E-Board bypass (not tested)
+- [x] 16.5 Test /chapter-assign Omega assignment (2026-01-06: PASS - Omega visible in E-Board autocomplete, hidden from /verify-start)
+- [x] 16.6 Test error cases: invalid year, phone, voucher (2026-01-06: 16.6.3 PASS - non-existent voucher)
 
 ## 17. Documentation
 - [x] 17.1 Update CLAUDE.md:

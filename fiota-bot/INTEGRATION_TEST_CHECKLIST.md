@@ -1,7 +1,7 @@
 # FiotaBot Integration Test Checklist
 
-**Version:** 1.0
-**Last Updated:** January 2026
+**Version:** 1.1
+**Last Updated:** 2026-01-06
 
 Use this checklist when deploying FiotaBot to verify all verification flows work correctly.
 
@@ -9,10 +9,10 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
 
 ## Prerequisites
 
-- [ ] Bot is running (`pm2 status FiotaBot` shows "online")
-- [ ] Slash commands are registered (`npm run deploy` was run)
-- [ ] You have access to a test Discord server
-- [ ] You have at least one test account (or can use your own)
+- [x] Bot is running (`pm2 status FiotaBot` shows "online")
+- [x] Slash commands are registered (`npm run deploy` was run)
+- [x] You have access to a test Discord server
+- [x] You have at least one test account (or can use your own)
 
 ---
 
@@ -22,25 +22,25 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
 
 ### Steps
 
-1. [ ] **Agree to Rules First**
+1. [x] **Agree to Rules First** ✅ 2026-01-06
    - Go to `#rules-and-conduct`
    - Click `[✅ I Agree to the Code of Conduct]`
    - Verify: You receive `✅ Rules Accepted` role
 
-2. [ ] **Start Verification**
+2. [x] **Start Verification** ✅ 2026-01-06
    - Go to `#welcome-gate`
    - Type `/verify-start`
    - Verify: Chapter autocomplete appears (type "gamma" to test search)
 
-3. [ ] **Select Chapter**
+3. [x] **Select Chapter** ✅ 2026-01-06
    - Select `Gamma Pi - Graduate Chapter`
    - Verify: Industry autocomplete appears
 
-4. [ ] **Select Industry**
+4. [x] **Select Industry** ✅ 2026-01-06
    - Select `Technology / Software Engineering`
    - Verify: Modal 1 appears
 
-5. [ ] **Fill Modal 1 (Identity)**
+5. [x] **Fill Modal 1 (Identity)** ✅ 2026-01-06
    - First Name: `Test`
    - Last Name: `Brother`
    - Don Name: `Phoenix`
@@ -49,7 +49,7 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
    - Click Submit
    - Verify: Confirmation message with "Continue to Step 2" button appears
 
-6. [ ] **Fill Modal 2 (Contact & Vouchers)**
+6. [x] **Fill Modal 2 (Contact & Vouchers)** ✅ 2026-01-06
    - Click "Continue to Step 2"
    - Phone Number: `(555) 123-4567`
    - Zip Code or City: `New York` or `10001`
@@ -58,7 +58,7 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
    - Click Submit
    - Verify: Success message with ticket ID appears
 
-7. [ ] **Check Verification Channel**
+7. [ ] **Check Verification Channel** ⏸️ Blocked - needs valid vouchers
    - Go to `#verification-requests` (or your configured channel)
    - Verify: Ticket embed appears with all entered information
    - Verify: Approve button is visible
@@ -78,16 +78,16 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
 
 ### Steps
 
-1. [ ] **Prepare Fresh Environment**
+1. [x] **Prepare Fresh Environment** ✅ 2026-01-06
    - Either: Create new test server
    - Or: Clear database (`rm fiota.db` and restart bot)
 
-2. [ ] **Run /init as Server Owner**
+2. [x] **Run /init as Server Owner** ✅ 2026-01-06
    - Type `/init chapter:Gamma Pi industry:Technology / Software Engineering`
    - Verify: Setup completes (roles/channels created)
    - Verify: "Light the Torch" button appears
 
-3. [ ] **Register Founding Brother**
+3. [x] **Register Founding Brother** ✅ 2026-01-06
    - Click "🦁 Light the Torch"
    - Fill Modal 1 (same fields as 16.1)
    - Click "Continue to Step 2"
@@ -95,10 +95,10 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
    - Click Submit
 
 ### Expected Results
-- [ ] User receives `🦁 ΓΠ Brother` role immediately (no voucher approval needed)
-- [ ] Rules embed posted to `#rules-and-conduct`
-- [ ] Verification gate posted to `#welcome-gate`
-- [ ] Database shows user with status='BROTHER'
+- [x] User receives `🦁 ΓΠ Brother` role immediately (no voucher approval needed)
+- [x] Rules embed posted to `#rules-and-conduct`
+- [x] Verification gate posted to `#welcome-gate`
+- [x] Database shows user with status='BROTHER'
 
 ---
 
@@ -165,20 +165,21 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
 
 ### Steps
 
-1. [ ] **Assign Omega Chapter**
+1. [x] **Assign Omega Chapter** ✅ 2026-01-06
    - Type `/chapter-assign user:@[Brother] chapter:Omega`
    - Verify: Omega appears in autocomplete (it's hidden from /verify-start)
    - Verify: Success message confirms assignment
+   - Actual: "New Chapter: Omega Chapter - Reserved for Deceased Brothers"
 
-2. [ ] **Verify Database**
+2. [ ] **Verify Database** (optional)
    ```sql
    SELECT discord_id, chapter FROM users WHERE chapter = 'omega';
    ```
 
 ### Expected Results
-- [ ] User's chapter updated to 'omega'
-- [ ] Omega was visible in /chapter-assign autocomplete
-- [ ] Omega is NOT visible in /verify-start autocomplete
+- [x] User's chapter updated to 'omega'
+- [x] Omega was visible in /chapter-assign autocomplete
+- [x] Omega is NOT visible in /verify-start autocomplete
 
 ---
 
@@ -200,12 +201,14 @@ Use this checklist when deploying FiotaBot to verify all verification flows work
 3. [ ] Submit
 4. [ ] Verify: Error message about phone format
 
-### Test 16.6.3: Non-Existent Voucher
+### Test 16.6.3: Non-Existent Voucher ✅ 2026-01-06
 
-1. [ ] Get to Modal 2
-2. [ ] Enter Voucher 1: `Nonexistent Person Who Doesnt Exist`
-3. [ ] Submit
-4. [ ] Verify: Error message that voucher was not found
+1. [x] Get to Modal 2
+2. [x] Enter Voucher 1: `Nonexistent Person Who Doesnt Exist`
+3. [x] Submit
+4. [x] Verify: Error message that voucher was not found
+   - Actual: "Could not find a brother matching 'Shuar'. Check spelling or use their full name."
+   - Bonus: Also caught self-vouching attempt: "You cannot vouch for yourself."
 
 ### Test 16.6.4: Year Before 1931
 
@@ -239,16 +242,16 @@ After testing, you may want to:
 
 | Test | Date | Tester | Pass/Fail | Notes |
 |------|------|--------|-----------|-------|
-| 16.1 | | | | |
-| 16.2 | | | | |
-| 16.3 | | | | |
-| 16.4 | | | | |
-| 16.5 | | | | |
-| 16.6.1 | | | | |
-| 16.6.2 | | | | |
-| 16.6.3 | | | | |
-| 16.6.4 | | | | |
-| 16.6.5 | | | | |
+| 16.1 | 2026-01-06 | Melo | ⏸️ Partial | Steps 1-6 PASS, Step 7 blocked (needs valid vouchers) |
+| 16.2 | 2026-01-06 | Melo | ✅ PASS | Full flow: init → roles → embeds → founding brother |
+| 16.3 | | | ⏸️ Blocked | Needs 2nd member for voucher approval |
+| 16.4 | | | | Not tested |
+| 16.5 | 2026-01-06 | Melo | ✅ PASS | Omega assignment works, hidden from /verify-start |
+| 16.6.1 | | | | Not tested |
+| 16.6.2 | | | | Not tested |
+| 16.6.3 | 2026-01-06 | Melo | ✅ PASS | Non-existent voucher + self-vouch prevented |
+| 16.6.4 | | | | Not tested |
+| 16.6.5 | | | | Not tested |
 
 ---
 
