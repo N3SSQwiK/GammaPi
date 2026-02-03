@@ -1,37 +1,35 @@
 # Continuity
 
 ## Summary
-FiotaBot is a Discord bot for Gamma Pi chapter management (Phi Iota Alpha). The project includes the bot, PillarFunFacts workflows, and strategic documentation. Recent work added member lifecycle management and a comprehensive test suite.
+FiotaBot is a Discord bot for Gamma Pi chapter management (Phi Iota Alpha). Recent work completed the OpenSpec gap analysis, migrated tooling to OPSX commands, and created a spec cleanup change ready for implementation.
 
 ## Completed
-- Member lifecycle management (status tracking, suspension, revocation)
-- Comprehensive test suite (88 unit tests) and archived verification proposals
-- `/verify-override` autocomplete for pending ticket selection
-- OpenSpec gap analysis report
-- Unified Operations Manual (consolidated SOP + Runbook)
-- Data export script for Power Query/Excel
-- OpenSpec tooling migrated from `openspec` to `opsx` command naming
+- PR #6 merged: gap analysis, OPSX tooling migration, test suite, member lifecycle
+- OPSX command migration (`/opsx:*` replaces `/openspec:*`)
+- Created `spec-cleanup-operations-community` change with all artifacts
+- Specs aligned: `access-control`, `bot-core` now match implementation
+- Archived proposals: `add-bootstrap-flow`, `enhance-verification-ux`, `add-init-command`
 
 ## In Progress
-- OpenSpec/OPSX workflow tooling refresh (unstaged changes: renamed commands, new skills, updated AGENTS.md/CLAUDE.md)
+- `spec-cleanup-operations-community` change ready for `/opsx:apply`
 
 ## Blocked
 None
 
 ## Key Files
-- `fiota-bot/src/modules/access/accessHandler.ts` - Verification flow with dual-voucher system
-- `fiota-bot/src/lib/repositories/` - Repository pattern for all DB access
-- `openspec/config.yaml` - OpenSpec configuration (new)
-- `CLAUDE.md` - Project instructions (modified in working tree)
+- `openspec/changes/spec-cleanup-operations-community/` - Pending spec sync (operations + community)
+- `openspec/specs/operations/spec.md` - Needs attendance/voting schema docs
+- `SPEC_GAP_ANALYSIS.md` - Gap analysis with remaining recommendations
+- `fiota-bot/src/lib/__tests__/` - Test suite (88 unit tests)
 
 ## Context
-- Branch: `claude/assess-spec-gaps-j0klY` (diverged from main with OPSX tooling changes)
-- Working tree has unstaged changes: OPSX command migration (renaming openspec → opsx), new skills/workflows
-- PR #6 status unclear (gh CLI unavailable locally) — was previously open for test suite + verification UX
-- Bot is deployed on VPS via PM2
+- On `main` branch, clean working tree
+- Bot deployed on VPS via PM2
+- 6 active proposals remain unimplemented (engagement features backlog)
+- Pipeline module still stubbed—needs decision (implement or defer)
 
 ## Suggested Prompt
-> Review and commit the unstaged OPSX tooling migration (openspec → opsx rename, new skills, updated AGENTS.md/CLAUDE.md). Then check PR #6 status — if still open, merge it. After that, resume integration testing or start implementing features from the gap analysis report.
+> Run `/opsx:apply spec-cleanup-operations-community` to sync the operations and community specs to main. After that, consider: (1) archive the change, (2) decide on pipeline module (implement vs defer), or (3) start one of the 6 engagement feature proposals.
 
 ## Source
-Claude Code | 2026-02-03 02:21 UTC
+Claude Code | 2026-02-03 23:46 UTC
