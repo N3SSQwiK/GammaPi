@@ -1,10 +1,12 @@
 import {
     SlashCommandBuilder,
     ChatInputCommandInteraction,
+    AutocompleteInteraction,
     PermissionFlagsBits
 } from 'discord.js';
 import { ticketRepository } from '../lib/repositories/ticketRepository';
 import { userRepository } from '../lib/repositories/userRepository';
+import { getDisplayName } from '../lib/displayNameBuilder';
 import logger from '../lib/logger';
 
 export default {
@@ -15,8 +17,9 @@ export default {
         .addStringOption(option =>
             option
                 .setName('ticket_id')
-                .setDescription('The ticket ID to override (e.g., ticket_123456789_1234567890)')
+                .setDescription('Select a pending verification ticket')
                 .setRequired(true)
+                .setAutocomplete(true)
         )
         .addStringOption(option =>
             option
@@ -24,6 +27,30 @@ export default {
                 .setDescription('Reason for override (logged for audit)')
                 .setRequired(true)
         ),
+
+    async autocomplete(interaction: AutocompleteInteraction) {
+        const focusedValue = interaction.options.getFocused().toLowerCase();
+        const pendingTickets = ticketRepository.getPendingTickets();
+
+        const options = pendingTickets
+            .map(ticket => {
+                const user = userRepository.getByDiscordId(ticket.user_id);
+                const displayName = user ? getDisplayName(user, 'full') : `User ${ticket.user_id}`;
+                const statusLabel = ticket.status === 'PENDING_2' ? ' [1/2]' : '';
+
+                return {
+                    name: `${displayName}${statusLabel}`.substring(0, 100),
+                    value: ticket.ticket_id,
+                    searchable: `${displayName} ${ticket.ticket_id}`.toLowerCase()
+                };
+            })
+            .filter(opt => opt.searchable.includes(focusedValue))
+            .slice(0, 25);
+
+        await interaction.respond(
+            options.map(({ name, value }) => ({ name, value }))
+        );
+    },
 
     async execute(interaction: ChatInputCommandInteraction) {
         const ticketId = interaction.options.getString('ticket_id', true);

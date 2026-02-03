@@ -1,10 +1,44 @@
-import { Guild, ChannelType, ForumChannel, ChannelFlags, GuildForumTagData } from 'discord.js';
+import { Guild, ChannelType, ForumChannel, ChannelFlags, GuildForumTagData, PermissionsBitField, OverwriteType, TextChannel, GuildChannel } from 'discord.js';
 import { EXPECTED_ROLES, EXPECTED_CHANNELS, ExpectedChannel } from './serverConfig';
+import { PermissionOverwrite } from '../../lib/serverRequirements';
+
+/**
+ * Build Discord permission overwrites from our PermissionOverwrite format
+ */
+async function buildPermissionOverwrites(guild: Guild, overwrites: PermissionOverwrite[]) {
+    const result: { id: string; allow?: bigint; deny?: bigint }[] = [];
+    const roles = await guild.roles.fetch();
+
+    for (const ow of overwrites) {
+        let targetId: string | null = null;
+
+        if (ow.roleOrMember === '@everyone') {
+            targetId = guild.id; // @everyone role ID is the guild ID
+        } else {
+            const role = roles.find(r => r.name === ow.roleOrMember);
+            if (role) {
+                targetId = role.id;
+            }
+        }
+
+        if (targetId) {
+            const allowBits = ow.allow?.reduce((acc, perm) => acc | perm, 0n) || 0n;
+            const denyBits = ow.deny?.reduce((acc, perm) => acc | perm, 0n) || 0n;
+            result.push({
+                id: targetId,
+                allow: allowBits || undefined,
+                deny: denyBits || undefined
+            });
+        }
+    }
+
+    return result;
+}
 
 export async function runSetup(guild: Guild): Promise<string[]> {
     const report: string[] = [];
 
-    // 1. Roles Setup
+    // 1. Roles Setup (must happen FIRST so permissions can reference them)
     const roles = await guild.roles.fetch();
     for (const roleName of EXPECTED_ROLES) {
         const found = roles.find(r => r.name === roleName);
@@ -25,7 +59,12 @@ export async function runSetup(guild: Guild): Promise<string[]> {
     const channels = await guild.channels.fetch();
     for (const expected of EXPECTED_CHANNELS) {
         let found = channels.find(c => c && c.name === expected.name);
-        
+
+        // Build permission overwrites if defined
+        const permissionOverwrites = expected.permissionOverwrites
+            ? await buildPermissionOverwrites(guild, expected.permissionOverwrites)
+            : undefined;
+
         if (!found) {
             try {
                 const newChannel = await guild.channels.create({
@@ -33,10 +72,11 @@ export async function runSetup(guild: Guild): Promise<string[]> {
                     type: expected.type as any,
                     topic: expected.guidelines,
                     defaultReactionEmoji: expected.defaultReaction ? { name: expected.defaultReaction, id: null } : undefined,
+                    permissionOverwrites: permissionOverwrites,
                     reason: 'FiotaBot Setup: Initializing Golden State'
                 });
-                
-                report.push(`✅ Created Channel: #${expected.name}`);
+
+                report.push(`✅ Created Channel: #${expected.name}${permissionOverwrites ? ' (with permissions)' : ''}`);
                 found = newChannel;
 
                 // Set flags if needed

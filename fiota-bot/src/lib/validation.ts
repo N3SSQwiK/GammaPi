@@ -70,7 +70,8 @@ export function validateYearSemester(input: string): YearSemesterResult | null {
     const trimmed = input.trim();
 
     // Regex: 4-digit year (1931-2029), space(s), Spring or Fall (case-insensitive)
-    const regex = /^(19[3-9]\d|20[0-2]\d)\s+(Spring|Fall)$/i;
+    // Note: 193[1-9] covers 1931-1939, then 19[4-9]\d covers 1940-1999
+    const regex = /^(193[1-9]|19[4-9]\d|20[0-2]\d)\s+(Spring|Fall)$/i;
     const match = trimmed.match(regex);
 
     if (!match) {

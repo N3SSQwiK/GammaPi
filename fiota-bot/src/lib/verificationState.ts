@@ -24,11 +24,38 @@ export interface PendingVerification {
     expiresAt: number;
 }
 
+// /init command state (chapter/industry/target from command, waiting for "Light the Torch" button)
+export interface PendingInitRegistration {
+    chapter: string;
+    industry: string;
+    targetId: string;
+    expiresAt: number;
+}
+
+// /init modal 1 data (identity info, waiting for modal 2)
+export interface PendingInitModal1 {
+    chapter: string;
+    industry: string;
+    targetId: string;
+    firstName: string;
+    lastName: string;
+    donName: string;
+    yearSemester: { year: number; semester: 'Spring' | 'Fall' };
+    jobTitle: string;
+    expiresAt: number;
+}
+
 // Pre-modal-1 data (chapter/industry from /verify-start command)
 export const pendingVerifyStarts = new Map<string, PendingVerifyStart>();
 
 // Post-modal-1 data (identity info, waiting for modal 2)
 export const pendingVerifications = new Map<string, PendingVerification>();
+
+// /init command data (waiting for "Light the Torch" button)
+export const pendingInitRegistrations = new Map<string, PendingInitRegistration>();
+
+// /init modal 1 data (waiting for modal 2)
+export const pendingInitModal1Data = new Map<string, PendingInitModal1>();
 
 // Clean up expired entries every 5 minutes
 setInterval(() => {
@@ -43,6 +70,18 @@ setInterval(() => {
     for (const [key, value] of pendingVerifications) {
         if (value.expiresAt < now) {
             pendingVerifications.delete(key);
+        }
+    }
+
+    for (const [key, value] of pendingInitRegistrations) {
+        if (value.expiresAt < now) {
+            pendingInitRegistrations.delete(key);
+        }
+    }
+
+    for (const [key, value] of pendingInitModal1Data) {
+        if (value.expiresAt < now) {
+            pendingInitModal1Data.delete(key);
         }
     }
 }, 5 * 60 * 1000);

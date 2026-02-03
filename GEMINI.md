@@ -53,12 +53,14 @@ fiota-bot/
 
 ### Key Features
 - **Rules Agreement**: Code of Conduct acceptance required before verification (`/rules` posts embed, `✅ Rules Accepted` role gates access)
-- **Dual-Voucher Verification**: Two-step member onboarding requiring approval from 2 active brothers
+- **Multi-Step Verification**: Enhanced onboarding via `/verify-start` command with autocomplete for chapter/industry selection, followed by two-modal flow for identity and voucher information
+- **Named Voucher System**: Verification requires naming 2 ΓΠ brothers who can vouch. Any ΓΠ brother can approve verification requests. E-Board can use `/verify-override` for immediate verification.
 - **Professional Rolodex**: Searchable database by industry, job title, location (`/find`)
 - **Pipeline Tracking**: Candidate and Interest status management (`/pipeline`)
 - **Server Audit**: Weekly automated validation of roles, channels, permissions (`/audit`)
-- **Golden State Enforcement**: Infrastructure-as-code via `serverConfig.ts` with `/setup` command
+- **Golden State Enforcement**: Infrastructure-as-code via `serverConfig.ts` with `/init` command
 - **Geographic Intelligence**: Auto-derive city/state/timezone from zip codes
+- **Don Name Support**: Brothers can set a "don name" (brother name) displayed as "Don Phoenix" in searches and profiles via `/profile-update`
 
 ### Development Commands
 ```bash
@@ -66,15 +68,35 @@ cd fiota-bot
 npm install           # Install dependencies
 npm run build         # Compile TypeScript to dist/
 npm run deploy        # Register slash commands (required on first run and after command changes)
+npm run export        # Export database tables to CSV (for Power Query/Excel)
+npm test              # Run unit tests (88 tests for validation & display name)
 npm start             # Start bot (production: pm2 start dist/index.js)
 ```
 
 ### Critical Files
-- `src/modules/audit/serverConfig.ts` - The "Golden State" configuration defining all required roles (including `✅ Rules Accepted`), channels (including `#rules-and-conduct`), forum tags, and reactions
+- `src/modules/audit/serverConfig.ts` - The "Golden State" configuration that auto-aggregates roles/channels from module `requirements.ts` files
+- `src/modules/*/requirements.ts` - Each module declares its required roles/channels (colocation pattern)
+- `src/lib/serverRequirements.ts` - Central registry for aggregating module requirements
 - `src/modules/access/rulesHandler.ts` - Code of Conduct embed and agreement logic
-- `src/modules/access/accessHandler.ts` - Brother/Guest verification flow with dual-voucher system
+- `src/modules/access/accessHandler.ts` - Brother/Guest verification flow with dual-voucher system and multi-modal flow
+- `src/lib/constants.ts` - CHAPTERS (80+ Phi Iota Alpha chapters) and INDUSTRIES (50 NAICS-based categories) constants with autocomplete helpers
+- `src/lib/validation.ts` - Validation utilities for year/semester, phone numbers, voucher search, name matching
+- `src/lib/displayNameBuilder.ts` - Display name formatting with don name priority ("Don Phoenix" vs "John Smith")
 - `src/lib/repositories/` - All database access MUST go through repository pattern (UserRepository, VoteRepository, AttendanceRepository, TicketRepository)
 - `src/deploy-commands.ts` - MUST run `npm run deploy` after any changes to slash command definitions
+
+### Initialization & Verification Commands
+- `/init` - Server owner command for complete server setup: creates roles/channels, posts embeds, registers founding brothers (auto-disables after 2 brothers exist)
+- `/verify` - Admin command to re-post the verification gate embed (repair command)
+- `/rules` - Admin command to re-post the Code of Conduct embed (repair command)
+- `/verify-start` - User command to begin verification (autocomplete for chapter/industry)
+- `/verify-override` - E-Board command to override a verification ticket immediately
+- `/chapter-assign` - E-Board command to assign a brother to a chapter (including hidden Omega)
+- `/profile-update` - User command to update profile info (don name, phone, job title, city)
+
+### Networking Commands
+- `/find` - Search brothers by industry, job title, or location
+- `/mentor` - Toggle mentorship availability (assigns/removes `🧠 Open to Mentor` role)
 
 ### Environment Variables
 Required in `.env`:
@@ -88,8 +110,16 @@ AUDIT_CHANNEL_ID=         # Channel for audit reports
 
 ### Database Schema
 SQLite database located at `data/fiota.db`:
-- `users` - Brother profiles with industry, location, verification status, `rules_agreed_at` timestamp
-- `verification_tickets` - Pending verification requests with dual-voucher tracking
+- `users` - Brother profiles including:
+  - Identity: `first_name`, `last_name`, `don_name`, `real_name` (generated column: `first_name || ' ' || last_name`)
+  - Chapter info: `chapter`, `initiation_year`, `initiation_semester`
+  - Contact: `phone_number`, `city`, `state_province`, `country`
+  - Professional: `industry`, `job_title`, `zip_code`
+  - Status: `status` (GUEST or BROTHER), `rules_agreed_at`
+- `verification_tickets` - Pending verification requests with:
+  - Named vouchers: `named_voucher_1`, `named_voucher_2` (Discord IDs, searched by name)
+  - Approval tracking: `voucher_1`, `voucher_2`, `voucher_1_at`, `voucher_2_at`
+  - Status: PENDING, PENDING_2 (1 approval), VERIFIED, EXPIRED, OVERRIDDEN
 - `votes` - Voting records with issue tracking
 - `attendance` - Meeting attendance logs
 
@@ -143,11 +173,13 @@ This project uses spec-driven development:
 
 ## Critical Documentation Files
 
-- **CLAUDE.md** - AI assistant guidance (for Claude)
-- **FiotaBot_Implementation_SOP.md** - Step-by-step deployment guide
+- **CLAUDE.md** - AI assistant guidance (for Claude Code)
+- **GEMINI.md** - AI assistant guidance (for Google Gemini)
+- **Gamma-Pi_Discord_Server_SOP.md** - Unified Standard Operating Procedures:
+  - Part 1-3: Brother's Field Guide, Forum Guidelines, Permission Standards
+  - Part 4-6: Bot Administration, System Maintenance, Advanced Administration
 - **GammaPi_Discord_Migration_Report.md** - Strategic migration plan
 - **FiotaBot_Spec.md** - Technical specification and schema
-- **GammaPi_Tech_Chair_Runbook.md** - Operational runbook for tech chairs
 - **openspec/project.md** - Complete project context and conventions
 
 ## Security & Credentials
@@ -177,10 +209,11 @@ Before deploying FiotaBot changes:
 3. Run `npm run deploy` to register with Discord
 4. Restart bot
 
-**Modify server structure:**
-1. Update `src/modules/audit/serverConfig.ts`
-2. Test with `/setup` in a test server
-3. Validate with `/audit`
+**Modify server structure (Golden State):**
+1. Create or update `requirements.ts` in your module folder
+2. Import your requirements in `src/modules/audit/serverConfig.ts`
+3. Run `npm run build` to compile
+4. Test with `/init` in Discord (creates missing roles/channels) or validate with `/audit`
 
 **Add database fields:**
 1. Update repository in `src/lib/repositories/`
@@ -193,7 +226,7 @@ See `openspec/changes/` for pending feature proposals:
 
 | Proposal | Description | Status |
 |----------|-------------|--------|
-| `enhance-verification-ux` | Multi-step verification, don names, chapter/industry dropdowns | Pending |
+| `add-member-lifecycle` | Suspension, revocation, returning members | Pending |
 | `add-engagement-infrastructure` | Weekly Pulse digest, Knowledge Vault | Pending |
 | `add-gamification-system` | Achievement badges, structured Wins channel | Pending |
 | `add-networking-automation` | Office Hours Roulette, geographic clusters | Pending |
@@ -201,6 +234,7 @@ See `openspec/changes/` for pending feature proposals:
 | `add-linkedin-bridge` | LinkedIn profile sync, amplification | Pending |
 
 **Recently Completed:**
+- `add-init-command` - Consolidated server initialization (archived 2026-01-05)
 - `add-rules-agreement` - Code of Conduct with `✅ Rules Accepted` role gating (archived 2025-12-30)
 
 ## Domain Context

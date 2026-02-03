@@ -1,5 +1,5 @@
 import { Events, Interaction } from 'discord.js';
-import { handleAccessButton, handleAccessModal, handleVerificationModals, handleProfileUpdateModal, handleBootstrapModal } from '../modules/access/accessHandler';
+import { handleAccessButton, handleAccessModal, handleVerificationModals, handleProfileUpdateModal, handleBootstrapModal, handleInitRegisterButton, handleInitModal1, handleInitContinueButton, handleInitModal2 } from '../modules/access/accessHandler';
 import { handleRulesButton } from '../modules/access/rulesHandler';
 import logger from '../lib/logger';
 
@@ -45,6 +45,15 @@ export default {
                 await handleRulesButton(interaction);
                 return;
             }
+            // Handle /init flow buttons
+            if (interaction.customId.startsWith('init_register_')) {
+                await handleInitRegisterButton(interaction);
+                return;
+            }
+            if (interaction.customId.startsWith('init_continue_')) {
+                await handleInitContinueButton(interaction);
+                return;
+            }
             // Handle Access Buttons
             await handleAccessButton(interaction);
         } else if (interaction.isModalSubmit()) {
@@ -53,7 +62,16 @@ export default {
                 await handleVerificationModals(interaction);
                 return;
             }
-            // Handle bootstrap modal (founding brother registration)
+            // Handle /init modals (init_modal_1, init_modal_2)
+            if (interaction.customId.startsWith('init_modal_1_')) {
+                await handleInitModal1(interaction);
+                return;
+            }
+            if (interaction.customId.startsWith('init_modal_2_')) {
+                await handleInitModal2(interaction);
+                return;
+            }
+            // Handle bootstrap modal (founding brother registration) - legacy
             if (interaction.customId.startsWith('bootstrap_modal_')) {
                 await handleBootstrapModal(interaction);
                 return;
